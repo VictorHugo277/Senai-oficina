@@ -43,13 +43,14 @@
             user-select: none; 
             border-radius: 2px; 
             box-shadow: 2px 2px 5px rgba(0,0,0,0.4);
+            transition: transform 0.2s;
             text-align: center;
             box-sizing: border-box;
             border: 2px solid transparent;
         }
         
         .item.selecionado {
-            border: 2px solid #e74c3c !important;
+            border: 2px solid #e74c3c;
             filter: brightness(1.2); 
             z-index: 500;
         }
@@ -137,98 +138,104 @@
     <script>
         let itemArrastado = null;
         let itemSelecionado = null;
-        let startX = 0, startY = 0;
-        let initialLeft = 0, initialTop = 0;
+        let lastX = 0; 
+        let lastY = 0;
         const ESCALA = 0.5;
 
         function selecionar(elemento) {
             if (itemSelecionado) itemSelecionado.classList.remove('selecionado');
             itemSelecionado = elemento;
-            if (itemSelecionado) itemSelecionado.classList.add('selecionado');
+            itemSelecionado.classList.add('selecionado');
         }
 
-        function iniciarToque(e) {
-            const target = e.target.closest('.item');
-            if (target) {
-                itemArrastado = target;
+        function iniciarArraste(e) {
+            if (e.target.classList.contains('item')) {
+                itemArrastado = e.target;
                 selecionar(itemArrastado);
                 
-                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+                const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
                 
-                startX = clientX;
-                startY = clientY;
-                initialLeft = parseFloat(itemArrastado.style.left) || 0;
-                initialTop = parseFloat(itemArrastado.style.top) || 0;
-                
+                lastX = clientX;
+                lastY = clientY;
                 itemArrastado.style.zIndex = 1000;
-            } else {
-                // Se clicar fora dos itens na sala, desmarca
-                if (e.target.id === 'sala') {
-                    selecionar(null);
-                }
             }
         }
 
-        function moverToque(e) {
+        function arrastar(e) {
             if (!itemArrastado) return;
-            e.preventDefault();
+            e.preventDefault(); 
             
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+            const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
             
-            const dx = clientX - startX;
-            const dy = clientY - startY;
+            const dx = clientX - lastX;
+            const dy = clientY - lastY;
             
-            itemArrastado.style.left = (initialLeft + dx) + 'px';
-            itemArrastado.style.top = (initialTop + dy) + 'px';
+            let currentLeft = parseFloat(itemArrastado.style.left) || 0;
+            let currentTop = parseFloat(itemArrastado.style.top) || 0;
+            
+            itemArrastado.style.left = (currentLeft + dx) + 'px';
+            itemArrastado.style.top = (currentTop + dy) + 'px';
+            
+            lastX = clientX;
+            lastY = clientY;
         }
 
-        function pararToque() {
+        function pararArraste() {
             if (itemArrastado) {
                 itemArrastado.style.zIndex = 1;
                 itemArrastado = null;
             }
         }
 
-        const sala = document.getElementById('sala');
-        
-        // Eventos unificados Mouse e Touch
-        sala.addEventListener('mousedown', iniciarToque);
-        document.addEventListener('mousemove', moverToque);
-        document.addEventListener('mouseup', pararToque);
-
-        sala.addEventListener('touchstart', iniciarToque, {passive: false});
-        document.addEventListener('touchmove', moverToque, {passive: false});
-        document.addEventListener('touchend', pararToque);
+        document.getElementById('sala').addEventListener('mousedown', iniciarArraste);
+        document.addEventListener('mousemove', arrastar);
+        document.addEventListener('mouseup', pararArraste);
+        document.getElementById('sala').addEventListener('touchstart', iniciarArraste, {passive: false});
+        document.addEventListener('touchmove', arrastar, {passive: false});
+        document.addEventListener('touchend', pararArraste);
 
         function girarItemSelecionado() {
-            if (!itemSelecionado) return alert("Selecione um item primeiro tocando nele!");
+            if (!itemSelecionado) {
+                alert("Toque num item para o selecionar primeiro!");
+                return;
+            }
             let anguloAtual = parseInt(itemSelecionado.getAttribute('data-angle')) || 0;
             let novoAngulo = anguloAtual + 90;
-            if (novoAngulo >= 360) novoAngulo = 0;
+            if (novoAngulo === 360) novoAngulo = 0;
+            
             itemSelecionado.style.transform = `rotate(${novoAngulo}deg)`;
             itemSelecionado.setAttribute('data-angle', novoAngulo);
         }
 
         function removerItemSelecionado() {
-            if (!itemSelecionado) return alert("Selecione um item primeiro tocando nele!");
-            if (confirm("Deseja mesmo remover este item?")) {
+            if (!itemSelecionado) {
+                alert("Toque num item para o selecionar primeiro!");
+                return;
+            }
+            if (confirm("Tem a certeza que deseja remover este item?")) {
                 itemSelecionado.remove(); 
                 itemSelecionado = null;   
             }
         }
 
         function duplicarItemSelecionado() {
-            if (!itemSelecionado) return alert("Selecione um item primeiro tocando nele!");
+            if (!itemSelecionado) {
+                alert("Toque num item para o selecionar primeiro!");
+                return;
+            }
+
+            const sala = document.getElementById('sala');
             const clone = document.createElement('div');
+            
             clone.className = 'item';
-            clone.innerText = itemSelecionado.innerText;
+            clone.innerText = itemSelecionado.innerText; 
             clone.style.width = itemSelecionado.style.width;
             clone.style.height = itemSelecionado.style.height;
             clone.style.backgroundColor = itemSelecionado.style.backgroundColor;
             
-            const angulo = itemSelecionado.getAttribute('data-angle') || "0";
+            const angulo = itemSelecionado.getAttribute('data-angle');
             clone.setAttribute('data-angle', angulo);
             clone.style.transform = `rotate(${angulo}deg)`;
             
@@ -236,31 +243,36 @@
             let currentTop = parseFloat(itemSelecionado.style.top) || 0;
             clone.style.left = (currentLeft + 20) + 'px';
             clone.style.top = (currentTop + 20) + 'px';
-            
+
             sala.appendChild(clone);
             selecionar(clone);
         }
 
         function adicionarItem() {
             const nome = document.getElementById('nomeItem').value || "Item";
-            const cor = document.getElementById('corItem').value;
+            const cor = document.getElementById('corItem').value; 
             const largura = parseInt(document.getElementById('larguraItem').value);
             const comprimento = parseInt(document.getElementById('comprimentoItem').value);
-            
-            if (!largura || !comprimento) return alert("Preencha as medidas (largura e comprimento)!");
-            
+
+            if (!largura || !comprimento) {
+                alert("Preencha a largura e o comprimento em centímetros!");
+                return;
+            }
+
+            const sala = document.getElementById('sala');
             const novoElemento = document.createElement('div');
+            
             novoElemento.className = 'item';
             novoElemento.innerText = nome;
             novoElemento.setAttribute('data-angle', '0');
+            
             novoElemento.style.width = (largura * ESCALA) + 'px';
             novoElemento.style.height = (comprimento * ESCALA) + 'px';
             novoElemento.style.left = '200px';
             novoElemento.style.top = '150px';
             novoElemento.style.backgroundColor = cor;
-            
+
             sala.appendChild(novoElemento);
-            selecionar(novoElemento);
             
             document.getElementById('nomeItem').value = '';
             document.getElementById('larguraItem').value = '';
@@ -294,9 +306,10 @@
             if (!codigo) return; 
             
             try {
-                const jsonTexto = decodeURIComponent(escape(atob(codigo.trim())));
+                const jsonTexto = decodeURIComponent(escape(atob(codigo)));
                 const layout = JSON.parse(jsonTexto);
                 
+                const sala = document.getElementById('sala');
                 sala.innerHTML = ''; 
                 itemSelecionado = null; 
                 
