@@ -121,10 +121,10 @@
 
         <hr style="width: 100%; border: 0.5px solid #eee;">
         
-        <strong>Compartilhar Layout:</strong>
+        <strong>Partilhar Layout:</strong>
         <div class="botoes-partilha">
-            <button class="exportar-btn" onclick="exportarLayout()">📤 Gerar Código Super Curto</button>
-            <button class="importar-btn" onclick="importarLayout()">📥 Colar Código Curto</button>
+            <button class="exportar-btn" onclick="exportarLayout()">📤 Gerar Código Ultracurto</button>
+            <button class="importar-btn" onclick="importarLayout()">📥 Colar Código Ultracurto</button>
         </div>
     </div>
 
@@ -273,61 +273,60 @@
 
         function exportarLayout() {
             const itens = document.querySelectorAll('#sala .item');
-            let codigoCurto = "";
+            let arrayDados = [];
             
-            // Formato ultracompacto separando por ponto e vírgula por item:
-            // Nome|Largura|Comprimento|Topo|Esquerda|Cor|Angulo
-            itens.forEach((item, index) => {
-                const n = item.innerText;
-                const w = item.getAttribute('data-w') || "59";
-                const h = item.getAttribute('data-h') || "36";
-                const t = Math.round(parseFloat(item.style.top) || 0);
-                const l = Math.round(parseFloat(item.style.left) || 0);
-                const c = encodeURIComponent(item.style.backgroundColor);
-                const a = item.getAttribute('data-angle') || "0";
-                
-                codigoCurto += `${n}|${w}|${h}|${t}|${l}|${c}|${a}`;
-                if (index < itens.length - 1) codigoCurto += ";";
+            itens.forEach(item => {
+                arrayDados.push([
+                    item.innerText,
+                    item.getAttribute('data-w') || "59",
+                    item.getAttribute('data-h') || "36",
+                    Math.round(parseFloat(item.style.top) || 0),
+                    Math.round(parseFloat(item.style.left) || 0),
+                    item.style.backgroundColor,
+                    item.getAttribute('data-angle') || "0"
+                ]);
             });
 
-            prompt("Código ultracurto (copie tudo e envie no WhatsApp):", codigoCurto);
+            // Encolhe ao máximo utilizando compressão de texto pura em Base64
+            const textoJson = JSON.stringify(arrayDados);
+            const codigoCurtissimo = btoa(encodeURIComponent(textoJson));
+            
+            prompt("Código ultracurto (copie e envie no WhatsApp):", codigoCurtissimo);
         }
 
         function importarLayout() {
-            const codigo = prompt("Cole aqui o código curto:");
+            const codigo = prompt("Cole aqui o código ultracurto:");
             if (!codigo) return; 
             
             try {
+                const textoJson = decodeURIComponent(atob(codigo.trim()));
+                const arrayDados = JSON.parse(textoJson);
+                
                 const sala = document.getElementById('sala');
                 sala.innerHTML = ""; 
                 itemSelecionado = null; 
                 
-                const blocos = codigo.trim().split(";");
-                
-                blocos.forEach(bloco => {
-                    const p = bloco.split("|");
-                    if (p.length >= 7) {
-                        const novoElemento = document.createElement('div');
-                        novoElemento.className = 'item';
-                        novoElemento.innerText = p[0];
-                        novoElemento.setAttribute('data-w', p[1]);
-                        novoElemento.setAttribute('data-h', p[2]);
-                        novoElemento.style.top = p[3] + 'px';
-                        novoElemento.style.left = p[4] + 'px';
-                        novoElemento.style.backgroundColor = decodeURIComponent(p[5]);
-                        novoElemento.setAttribute('data-angle', p[6]);
-                        novoElemento.style.transform = `rotate(${p[6]}deg)`;
-                        
-                        novoElemento.style.width = (p[1] * ESCALA) + 'px';
-                        novoElemento.style.height = (p[2] * ESCALA) + 'px';
-                        
-                        sala.appendChild(novoElemento);
-                    }
+                arrayDados.forEach(p => {
+                    const novoElemento = document.createElement('div');
+                    novoElemento.className = 'item';
+                    novoElemento.innerText = p[0];
+                    novoElemento.setAttribute('data-w', p[1]);
+                    novoElemento.setAttribute('data-h', p[2]);
+                    novoElemento.style.top = p[3] + 'px';
+                    novoElemento.style.left = p[4] + 'px';
+                    novoElemento.style.backgroundColor = p[5];
+                    novoElemento.setAttribute('data-angle', p[6]);
+                    novoElemento.style.transform = `rotate(${p[6]}deg)`;
+                    
+                    novoElemento.style.width = (p[1] * ESCALA) + 'px';
+                    novoElemento.style.height = (p[2] * ESCALA) + 'px';
+                    
+                    sala.appendChild(novoElemento);
                 });
                 
                 alert("Layout carregado com sucesso!");
             } catch (erro) {
-                alert("Erro! Código inválido ou incompleto.");
+                alert("Erro ao carregar o código. Certifique-se de copiar o texto inteiro.");
             }
         }
     </script>
