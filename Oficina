@@ -1,1 +1,315 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Simulador de Oficina - 10x8m</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background-color: #f0f0f0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 10px; 
+            margin: 0;
+            overflow-x: auto; 
+        }
+        
+        #sala { 
+            width: 500px; 
+            height: 400px; 
+            background-color: #e0e0e0; 
+            border: 4px solid #333; 
+            position: relative; 
+            overflow: hidden; 
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.2); 
+            margin-top: 10px;
+            background-image: linear-gradient(#ccc 1px, transparent 1px), linear-gradient(90deg, #ccc 1px, transparent 1px);
+            background-size: 50px 50px; 
+            touch-action: none; 
+        }
+        
+        .item { 
+            background-color: #2c3e50; 
+            position: absolute; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 10px; 
+            font-weight: bold; 
+            color: white; 
+            cursor: grab; 
+            user-select: none; 
+            border-radius: 2px; 
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.4);
+            transition: transform 0.2s;
+            text-align: center;
+            box-sizing: border-box;
+            border: 2px solid transparent;
+        }
+        
+        .item.selecionado {
+            border: 2px solid #e74c3c;
+            filter: brightness(1.2); 
+            z-index: 500;
+        }
+
+        .controles {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+            width: 95%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-sizing: border-box;
+        }
+        
+        .linha-input { display: flex; gap: 5px; align-items: center; }
+        .linha-input input[type="text"], .linha-input input[type="number"] { flex: 1; padding: 8px; border: 1px solid #aaa; border-radius: 4px; font-size: 14px;}
+        .linha-input input[type="color"] { width: 50px; height: 36px; padding: 0; border: 1px solid #aaa; border-radius: 4px; cursor: pointer; }
+        
+        button { 
+            padding: 10px; 
+            cursor: pointer; 
+            border: none; 
+            background-color: #27ae60; 
+            color: white; 
+            font-weight: bold; 
+            border-radius: 5px; 
+            font-size: 14px;
+        }
+        button.girar-btn { background-color: #e67e22; }
+        button.duplicar-btn { background-color: #2980b9; } 
+        button.remover-btn { background-color: #c0392b; }
+        button.exportar-btn { background-color: #8e44ad; margin-top: 10px;}
+        button.importar-btn { background-color: #9b59b6; }
+        
+        .aviso { font-size: 12px; color: #555; text-align: center; }
+        .botoes-acao { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+        .botoes-partilha { display: flex; flex-direction: column; gap: 5px; }
+    </style>
+</head>
+<body>
+
+    <h2>Simulador - Oficina 10x8m</h2>
+    <div class="aviso">Cada quadrado do chão equivale a 1 metro.</div>
+    
+    <div class="controles">
+        <strong>Criar Novo Item (em cm):</strong>
+        <div class="linha-input">
+            <input type="text" id="nomeItem" placeholder="Nome (ex: Torno)">
+            <input type="color" id="corItem" value="#3498db" title="Cor">
+        </div>
+        <div class="linha-input">
+            <input type="number" id="larguraItem" placeholder="Larg. cm">
+            <input type="number" id="comprimentoItem" placeholder="Comp. cm">
+        </div>
+        <button onclick="adicionarItem()">+ Adicionar Item à Sala</button>
+        
+        <hr style="width: 100%; border: 0.5px solid #eee;">
+        
+        <div class="botoes-acao">
+            <button class="girar-btn" onclick="girarItemSelecionado()">↻ Girar (90°)</button>
+            <button class="duplicar-btn" onclick="duplicarItemSelecionado()">➕ Duplicar</button>
+            <button class="remover-btn" style="grid-column: span 2;" onclick="removerItemSelecionado()">🗑️ Remover Selecionado</button>
+        </div>
+
+        <hr style="width: 100%; border: 0.5px solid #eee;">
+        
+        <strong>Compartilhar Layout (WhatsApp/Email):</strong>
+        <div class="botoes-partilha">
+            <button class="exportar-btn" onclick="exportarLayout()">📤 Gerar Código (Exportar)</button>
+            <button class="importar-btn" onclick="importarLayout()">📥 Colar Código (Importar)</button>
+        </div>
+    </div>
+
+    <div id="sala">
+        <div class="item" style="top: 20px; left: 20px; width: 29.5px; height: 18px; background-color: #2c3e50;" data-angle="0">B1</div>
+        <div class="item" style="top: 20px; left: 60px; width: 29.5px; height: 18px; background-color: #2c3e50;" data-angle="0">B2</div>
+        <div class="item" style="top: 20px; left: 100px; width: 29.5px; height: 18px; background-color: #2c3e50;" data-angle="0">B3</div>
+        <div class="item" style="top: 20px; left: 140px; width: 29.5px; height: 18px; background-color: #2c3e50;" data-angle="0">B4</div>
+    </div>
+
+    <script>
+        let itemArrastado = null;
+        let itemSelecionado = null;
+        let lastX = 0; 
+        let lastY = 0;
+        const ESCALA = 0.5;
+
+        function selecionar(elemento) {
+            if (itemSelecionado) itemSelecionado.classList.remove('selecionado');
+            itemSelecionado = elemento;
+            itemSelecionado.classList.add('selecionado');
+        }
+
+        function iniciarArraste(e) {
+            if (e.target.classList.contains('item')) {
+                itemArrastado = e.target;
+                selecionar(itemArrastado);
+                
+                const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+                const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+                
+                lastX = clientX;
+                lastY = clientY;
+                itemArrastado.style.zIndex = 1000;
+            }
+        }
+
+        function arrastar(e) {
+            if (!itemArrastado) return;
+            e.preventDefault(); 
+            
+            const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+            const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+            
+            const dx = clientX - lastX;
+            const dy = clientY - lastY;
+            
+            let currentLeft = parseFloat(itemArrastado.style.left) || 0;
+            let currentTop = parseFloat(itemArrastado.style.top) || 0;
+            
+            itemArrastado.style.left = (currentLeft + dx) + 'px';
+            itemArrastado.style.top = (currentTop + dy) + 'px';
+            
+            lastX = clientX;
+            lastY = clientY;
+        }
+
+        function pararArraste() {
+            if (itemArrastado) {
+                itemArrastado.style.zIndex = 1;
+                itemArrastado = null;
+            }
+        }
+
+        document.getElementById('sala').addEventListener('mousedown', iniciarArraste);
+        document.addEventListener('mousemove', arrastar);
+        document.addEventListener('mouseup', pararArraste);
+        document.getElementById('sala').addEventListener('touchstart', iniciarArraste, {passive: false});
+        document.addEventListener('touchmove', arrastar, {passive: false});
+        document.addEventListener('touchend', pararArraste);
+
+        function girarItemSelecionado() {
+            if (!itemSelecionado) return alert("Selecione um item primeiro!");
+            let anguloAtual = parseInt(itemSelecionado.getAttribute('data-angle')) || 0;
+            let novoAngulo = anguloAtual + 90;
+            if (novoAngulo === 360) novoAngulo = 0;
+            itemSelecionado.style.transform = `rotate(${novoAngulo}deg)`;
+            itemSelecionado.setAttribute('data-angle', novoAngulo);
+        }
+
+        function removerItemSelecionado() {
+            if (!itemSelecionado) return alert("Selecione um item primeiro!");
+            if (confirm("Deseja mesmo remover este item?")) {
+                itemSelecionado.remove(); 
+                itemSelecionado = null;   
+            }
+        }
+
+        function duplicarItemSelecionado() {
+            if (!itemSelecionado) return alert("Selecione um item primeiro!");
+            const sala = document.getElementById('sala');
+            const clone = document.createElement('div');
+            clone.className = 'item';
+            clone.innerText = itemSelecionado.innerText;
+            clone.style.width = itemSelecionado.style.width;
+            clone.style.height = itemSelecionado.style.height;
+            clone.style.backgroundColor = itemSelecionado.style.backgroundColor;
+            const angulo = itemSelecionado.getAttribute('data-angle');
+            clone.setAttribute('data-angle', angulo);
+            clone.style.transform = `rotate(${angulo}deg)`;
+            let currentLeft = parseFloat(itemSelecionado.style.left) || 0;
+            let currentTop = parseFloat(itemSelecionado.style.top) || 0;
+            clone.style.left = (currentLeft + 20) + 'px';
+            clone.style.top = (currentTop + 20) + 'px';
+            sala.appendChild(clone);
+            selecionar(clone);
+        }
+
+        function adicionarItem() {
+            const nome = document.getElementById('nomeItem').value || "Item";
+            const cor = document.getElementById('corItem').value;
+            const largura = parseInt(document.getElementById('larguraItem').value);
+            const comprimento = parseInt(document.getElementById('comprimentoItem').value);
+            if (!largura || !comprimento) return alert("Preencha as medidas (largura e comprimento)!");
+            const sala = document.getElementById('sala');
+            const novoElemento = document.createElement('div');
+            novoElemento.className = 'item';
+            novoElemento.innerText = nome;
+            novoElemento.setAttribute('data-angle', '0');
+            novoElemento.style.width = (largura * ESCALA) + 'px';
+            novoElemento.style.height = (comprimento * ESCALA) + 'px';
+            novoElemento.style.left = '200px';
+            novoElemento.style.top = '150px';
+            novoElemento.style.backgroundColor = cor;
+            sala.appendChild(novoElemento);
+            document.getElementById('nomeItem').value = '';
+            document.getElementById('larguraItem').value = '';
+            document.getElementById('comprimentoItem').value = '';
+        }
+
+        function exportarLayout() {
+            const itens = document.querySelectorAll('#sala .item');
+            const layout = [];
+            
+            itens.forEach(item => {
+                layout.push({
+                    nome: item.innerText,
+                    width: item.style.width,
+                    height: item.style.height,
+                    top: item.style.top,
+                    left: item.style.left,
+                    bgColor: item.style.backgroundColor,
+                    angle: item.getAttribute('data-angle') || "0"
+                });
+            });
+
+            const jsonTexto = JSON.stringify(layout);
+            const codigoFinal = btoa(unescape(encodeURIComponent(jsonTexto)));
+            
+            prompt("Copie o código abaixo e envie (WhatsApp, Email, etc):", codigoFinal);
+        }
+
+        function importarLayout() {
+            const codigo = prompt("Cole aqui o código do layout:");
+            if (!codigo) return; 
+            
+            try {
+                const jsonTexto = decodeURIComponent(escape(atob(codigo)));
+                const layout = JSON.parse(jsonTexto);
+                
+                const sala = document.getElementById('sala');
+                sala.innerHTML = ''; 
+                itemSelecionado = null; 
+                
+                layout.forEach(dados => {
+                    const novoElemento = document.createElement('div');
+                    novoElemento.className = 'item';
+                    novoElemento.innerText = dados.nome;
+                    novoElemento.setAttribute('data-angle', dados.angle);
+                    novoElemento.style.width = dados.width;
+                    novoElemento.style.height = dados.height;
+                    novoElemento.style.top = dados.top;
+                    novoElemento.style.left = dados.left;
+                    novoElemento.style.backgroundColor = dados.bgColor;
+                    novoElemento.style.transform = `rotate(${dados.angle}deg)`;
+                    
+                    sala.appendChild(novoElemento);
+                });
+                
+                alert("Layout carregado com sucesso!");
+            } catch (erro) {
+                alert("Erro! Código inválido. Certifique-se de copiar o texto inteiro.");
+            }
+        }
+    </script>
+</body>
+</html>
 
