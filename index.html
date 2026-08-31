@@ -121,9 +121,9 @@
 
         <hr style="width: 100%; border: 0.5px solid #eee;">
         
-        <strong>Compartilhar Layout (WhatsApp/Email):</strong>
+        <strong>Compartilhar Layout:</strong>
         <div class="botoes-partilha">
-            <button class="exportar-btn" onclick="exportarLayout()">📤 Gerar Código Curto</button>
+            <button class="exportar-btn" onclick="exportarLayout()">📤 Gerar Código Super Curto</button>
             <button class="importar-btn" onclick="importarLayout()">📥 Colar Código Curto</button>
         </div>
     </div>
@@ -247,7 +247,7 @@
             const largura = parseInt(document.getElementById('larguraItem').value);
             const comprimento = parseInt(document.getElementById('comprimentoItem').value);
             
-            if (!largura || !comprimento) return alert("Preencha as medidas (largura e comprimento)!");
+            if (!largura || !comprimento) return alert("Preencha as medidas!");
             
             const sala = document.getElementById('sala');
             const novoElemento = document.createElement('div');
@@ -273,60 +273,61 @@
 
         function exportarLayout() {
             const itens = document.querySelectorAll('#sala .item');
-            const layout = [];
+            let codigoCurto = "";
             
-            itens.forEach(item => {
-                layout.push({
-                    n: item.innerText,
-                    w: item.getAttribute('data-w') || "59",
-                    h: item.getAttribute('data-h') || "36",
-                    t: Math.round(parseFloat(item.style.top) || 0),
-                    l: Math.round(parseFloat(item.style.left) || 0),
-                    c: item.style.backgroundColor,
-                    a: item.getAttribute('data-angle') || "0"
-                });
+            // Formato ultracompacto separando por ponto e vírgula por item:
+            // Nome|Largura|Comprimento|Topo|Esquerda|Cor|Angulo
+            itens.forEach((item, index) => {
+                const n = item.innerText;
+                const w = item.getAttribute('data-w') || "59";
+                const h = item.getAttribute('data-h') || "36";
+                const t = Math.round(parseFloat(item.style.top) || 0);
+                const l = Math.round(parseFloat(item.style.left) || 0);
+                const c = encodeURIComponent(item.style.backgroundColor);
+                const a = item.getAttribute('data-angle') || "0";
+                
+                codigoCurto += `${n}|${w}|${h}|${t}|${l}|${c}|${a}`;
+                if (index < itens.length - 1) codigoCurto += ";";
             });
 
-            // Compacta gerando uma string curta
-            const jsonTexto = JSON.stringify(layout);
-            const codigoFinal = btoa(unescape(encodeURIComponent(jsonTexto)));
-            
-            prompt("Copie o código curto abaixo e envie no WhatsApp:", codigoFinal);
+            prompt("Código ultracurto (copie tudo e envie no WhatsApp):", codigoCurto);
         }
 
         function importarLayout() {
-            const codigo = prompt("Cole aqui o código do layout:");
+            const codigo = prompt("Cole aqui o código curto:");
             if (!codigo) return; 
             
             try {
-                const jsonTexto = decodeURIComponent(escape(atob(codigo.trim())));
-                const layout = JSON.parse(jsonTexto);
-                
                 const sala = document.getElementById('sala');
-                sala.innerHTML = ''; 
+                sala.innerHTML = ""; 
                 itemSelecionado = null; 
                 
-                layout.forEach(dados => {
-                    const novoElemento = document.createElement('div');
-                    novoElemento.className = 'item';
-                    novoElemento.innerText = dados.n;
-                    novoElemento.setAttribute('data-angle', dados.a);
-                    novoElemento.setAttribute('data-w', dados.w);
-                    novoElemento.setAttribute('data-h', dados.h);
-                    
-                    novoElemento.style.width = (dados.w * ESCALA) + 'px';
-                    novoElemento.style.height = (dados.h * ESCALA) + 'px';
-                    novoElemento.style.top = dados.t + 'px';
-                    novoElemento.style.left = dados.l + 'px';
-                    novoElemento.style.backgroundColor = dados.c;
-                    novoElemento.style.transform = `rotate(${dados.a}deg)`;
-                    
-                    sala.appendChild(novoElemento);
+                const blocos = codigo.trim().split(";");
+                
+                blocos.forEach(bloco => {
+                    const p = bloco.split("|");
+                    if (p.length >= 7) {
+                        const novoElemento = document.createElement('div');
+                        novoElemento.className = 'item';
+                        novoElemento.innerText = p[0];
+                        novoElemento.setAttribute('data-w', p[1]);
+                        novoElemento.setAttribute('data-h', p[2]);
+                        novoElemento.style.top = p[3] + 'px';
+                        novoElemento.style.left = p[4] + 'px';
+                        novoElemento.style.backgroundColor = decodeURIComponent(p[5]);
+                        novoElemento.setAttribute('data-angle', p[6]);
+                        novoElemento.style.transform = `rotate(${p[6]}deg)`;
+                        
+                        novoElemento.style.width = (p[1] * ESCALA) + 'px';
+                        novoElemento.style.height = (p[2] * ESCALA) + 'px';
+                        
+                        sala.appendChild(novoElemento);
+                    }
                 });
                 
                 alert("Layout carregado com sucesso!");
             } catch (erro) {
-                alert("Erro! Código inválido. Certifique-se de copiar todo o texto fornecido sem cortes.");
+                alert("Erro! Código inválido ou incompleto.");
             }
         }
     </script>
