@@ -123,16 +123,16 @@
         
         <strong>Compartilhar Layout (WhatsApp/Email):</strong>
         <div class="botoes-partilha">
-            <button class="exportar-btn" onclick="exportarLayout()">📤 Gerar Código (Exportar)</button>
-            <button class="importar-btn" onclick="importarLayout()">📥 Colar Código (Importar)</button>
+            <button class="exportar-btn" onclick="exportarLayout()">📤 Gerar Código Curto</button>
+            <button class="importar-btn" onclick="importarLayout()">📥 Colar Código Curto</button>
         </div>
     </div>
 
     <div id="sala">
-        <div class="item" style="top: 20px; left: 20px; width: 29.5px; height: 18px; background-color: #2c3e50;" data-angle="0">B1</div>
-        <div class="item" style="top: 20px; left: 60px; width: 29.5px; height: 18px; background-color: #2c3e50;" data-angle="0">B2</div>
-        <div class="item" style="top: 20px; left: 100px; width: 29.5px; height: 18px; background-color: #2c3e50;" data-angle="0">B3</div>
-        <div class="item" style="top: 20px; left: 140px; width: 29.5px; height: 18px; background-color: #2c3e50;" data-angle="0">B4</div>
+        <div class="item" style="top: 20px; left: 20px; width: 29.5px; height: 18px; background-color: #2c3e50;" data-angle="0" data-w="59" data-h="36">B1</div>
+        <div class="item" style="top: 20px; left: 60px; width: 29.5px; height: 18px; background-color: #2c3e50;" data-angle="0" data-w="59" data-h="36">B2</div>
+        <div class="item" style="top: 20px; left: 100px; width: 29.5px; height: 18px; background-color: #2c3e50;" data-angle="0" data-w="59" data-h="36">B3</div>
+        <div class="item" style="top: 20px; left: 140px; width: 29.5px; height: 18px; background-color: #2c3e50;" data-angle="0" data-w="59" data-h="36">B4</div>
     </div>
 
     <script>
@@ -145,7 +145,7 @@
         function selecionar(elemento) {
             if (itemSelecionado) itemSelecionado.classList.remove('selecionado');
             itemSelecionado = elemento;
-            itemSelecionado.classList.add('selecionado');
+            if (itemSelecionado) itemSelecionado.classList.add('selecionado');
         }
 
         function iniciarArraste(e) {
@@ -197,82 +197,74 @@
         document.addEventListener('touchend', pararArraste);
 
         function girarItemSelecionado() {
-            if (!itemSelecionado) {
-                alert("Toque num item para o selecionar primeiro!");
-                return;
-            }
+            if (!itemSelecionado) return alert("Selecione um item primeiro!");
             let anguloAtual = parseInt(itemSelecionado.getAttribute('data-angle')) || 0;
             let novoAngulo = anguloAtual + 90;
             if (novoAngulo === 360) novoAngulo = 0;
-            
             itemSelecionado.style.transform = `rotate(${novoAngulo}deg)`;
             itemSelecionado.setAttribute('data-angle', novoAngulo);
         }
 
         function removerItemSelecionado() {
-            if (!itemSelecionado) {
-                alert("Toque num item para o selecionar primeiro!");
-                return;
-            }
-            if (confirm("Tem a certeza que deseja remover este item?")) {
+            if (!itemSelecionado) return alert("Selecione um item primeiro!");
+            if (confirm("Deseja mesmo remover este item?")) {
                 itemSelecionado.remove(); 
                 itemSelecionado = null;   
             }
         }
 
         function duplicarItemSelecionado() {
-            if (!itemSelecionado) {
-                alert("Toque num item para o selecionar primeiro!");
-                return;
-            }
-
+            if (!itemSelecionado) return alert("Selecione um item primeiro!");
             const sala = document.getElementById('sala');
             const clone = document.createElement('div');
-            
             clone.className = 'item';
-            clone.innerText = itemSelecionado.innerText; 
+            clone.innerText = itemSelecionado.innerText;
             clone.style.width = itemSelecionado.style.width;
             clone.style.height = itemSelecionado.style.height;
             clone.style.backgroundColor = itemSelecionado.style.backgroundColor;
             
+            const w = itemSelecionado.getAttribute('data-w');
+            const h = itemSelecionado.getAttribute('data-h');
+            clone.setAttribute('data-w', w);
+            clone.setAttribute('data-h', h);
+
             const angulo = itemSelecionado.getAttribute('data-angle');
             clone.setAttribute('data-angle', angulo);
             clone.style.transform = `rotate(${angulo}deg)`;
-            
+
             let currentLeft = parseFloat(itemSelecionado.style.left) || 0;
             let currentTop = parseFloat(itemSelecionado.style.top) || 0;
             clone.style.left = (currentLeft + 20) + 'px';
             clone.style.top = (currentTop + 20) + 'px';
-
+            
             sala.appendChild(clone);
             selecionar(clone);
         }
 
         function adicionarItem() {
             const nome = document.getElementById('nomeItem').value || "Item";
-            const cor = document.getElementById('corItem').value; 
+            const cor = document.getElementById('corItem').value;
             const largura = parseInt(document.getElementById('larguraItem').value);
             const comprimento = parseInt(document.getElementById('comprimentoItem').value);
-
-            if (!largura || !comprimento) {
-                alert("Preencha a largura e o comprimento em centímetros!");
-                return;
-            }
-
+            
+            if (!largura || !comprimento) return alert("Preencha as medidas (largura e comprimento)!");
+            
             const sala = document.getElementById('sala');
             const novoElemento = document.createElement('div');
-            
             novoElemento.className = 'item';
             novoElemento.innerText = nome;
             novoElemento.setAttribute('data-angle', '0');
+            novoElemento.setAttribute('data-w', largura);
+            novoElemento.setAttribute('data-h', comprimento);
             
             novoElemento.style.width = (largura * ESCALA) + 'px';
             novoElemento.style.height = (comprimento * ESCALA) + 'px';
             novoElemento.style.left = '200px';
             novoElemento.style.top = '150px';
             novoElemento.style.backgroundColor = cor;
-
+            
             sala.appendChild(novoElemento);
+            selecionar(novoElemento);
             
             document.getElementById('nomeItem').value = '';
             document.getElementById('larguraItem').value = '';
@@ -285,20 +277,21 @@
             
             itens.forEach(item => {
                 layout.push({
-                    nome: item.innerText,
-                    width: item.style.width,
-                    height: item.style.height,
-                    top: item.style.top,
-                    left: item.style.left,
-                    bgColor: item.style.backgroundColor,
-                    angle: item.getAttribute('data-angle') || "0"
+                    n: item.innerText,
+                    w: item.getAttribute('data-w') || "59",
+                    h: item.getAttribute('data-h') || "36",
+                    t: Math.round(parseFloat(item.style.top) || 0),
+                    l: Math.round(parseFloat(item.style.left) || 0),
+                    c: item.style.backgroundColor,
+                    a: item.getAttribute('data-angle') || "0"
                 });
             });
 
+            // Compacta gerando uma string curta
             const jsonTexto = JSON.stringify(layout);
             const codigoFinal = btoa(unescape(encodeURIComponent(jsonTexto)));
             
-            prompt("Copie o código abaixo e envie (WhatsApp, Email, etc):", codigoFinal);
+            prompt("Copie o código curto abaixo e envie no WhatsApp:", codigoFinal);
         }
 
         function importarLayout() {
@@ -306,7 +299,7 @@
             if (!codigo) return; 
             
             try {
-                const jsonTexto = decodeURIComponent(escape(atob(codigo)));
+                const jsonTexto = decodeURIComponent(escape(atob(codigo.trim())));
                 const layout = JSON.parse(jsonTexto);
                 
                 const sala = document.getElementById('sala');
@@ -316,21 +309,24 @@
                 layout.forEach(dados => {
                     const novoElemento = document.createElement('div');
                     novoElemento.className = 'item';
-                    novoElemento.innerText = dados.nome;
-                    novoElemento.setAttribute('data-angle', dados.angle);
-                    novoElemento.style.width = dados.width;
-                    novoElemento.style.height = dados.height;
-                    novoElemento.style.top = dados.top;
-                    novoElemento.style.left = dados.left;
-                    novoElemento.style.backgroundColor = dados.bgColor;
-                    novoElemento.style.transform = `rotate(${dados.angle}deg)`;
+                    novoElemento.innerText = dados.n;
+                    novoElemento.setAttribute('data-angle', dados.a);
+                    novoElemento.setAttribute('data-w', dados.w);
+                    novoElemento.setAttribute('data-h', dados.h);
+                    
+                    novoElemento.style.width = (dados.w * ESCALA) + 'px';
+                    novoElemento.style.height = (dados.h * ESCALA) + 'px';
+                    novoElemento.style.top = dados.t + 'px';
+                    novoElemento.style.left = dados.l + 'px';
+                    novoElemento.style.backgroundColor = dados.c;
+                    novoElemento.style.transform = `rotate(${dados.a}deg)`;
                     
                     sala.appendChild(novoElemento);
                 });
                 
                 alert("Layout carregado com sucesso!");
             } catch (erro) {
-                alert("Erro! Código inválido. Certifique-se de copiar o texto inteiro.");
+                alert("Erro! Código inválido. Certifique-se de copiar todo o texto fornecido sem cortes.");
             }
         }
     </script>
