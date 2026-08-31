@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Simulador de Oficina - 10x8m</title>
+    <title>Simulador de Oficina - Customizável</title>
     <style>
         body { 
             font-family: Arial, sans-serif; 
@@ -70,7 +70,7 @@
         }
         
         .linha-input { display: flex; gap: 5px; align-items: center; }
-        .linha-input input[type="text"], .linha-input input[type="number"] { flex: 1; padding: 8px; border: 1px solid #aaa; border-radius: 4px; font-size: 14px;}
+        .linha-input input[type="text"], .linha-input input[type="number"], .linha-input select { flex: 1; padding: 8px; border: 1px solid #aaa; border-radius: 4px; font-size: 14px;}
         .linha-input input[type="color"] { width: 50px; height: 36px; padding: 0; border: 1px solid #aaa; border-radius: 4px; cursor: pointer; }
         
         button { 
@@ -83,10 +83,11 @@
             border-radius: 5px; 
             font-size: 14px;
         }
+        button.sala-btn { background-color: #34495e; }
         button.girar-btn { background-color: #e67e22; }
         button.duplicar-btn { background-color: #2980b9; } 
         button.remover-btn { background-color: #c0392b; }
-        button.exportar-btn { background-color: #8e44ad; margin-top: 10px;}
+        button.exportar-btn { background-color: #8e44ad; }
         button.importar-btn { background-color: #9b59b6; }
         
         .aviso { font-size: 12px; color: #555; text-align: center; }
@@ -96,20 +97,34 @@
 </head>
 <body>
 
-    <h2>Simulador - Oficina 10x8m</h2>
-    <div class="aviso">Cada quadrado do chão equivale a 1 metro.</div>
+    <h2>Simulador de Oficina Dinâmico</h2>
+    <div class="aviso" id="infoSala">Sala atual: 10m x 8m</div>
     
     <div class="controles">
-        <strong>Criar Novo Item (em cm):</strong>
+        <strong>⚙️ Configurar Tamanho da Sala:</strong>
+        <div class="linha-input">
+            <input type="number" id="larguraSala" placeholder="Largura (m)" value="10" step="0.5">
+            <input type="number" id="comprimentoSala" placeholder="Comprimento (m)" value="8" step="0.5">
+        </div>
+        <button class="sala-btn" onclick="redimensionarSala()">Atualizar Tamanho da Sala</button>
+
+        <hr style="width: 100%; border: 0.5px solid #eee;">
+
+        <strong>➕ Criar Novo Item:</strong>
         <div class="linha-input">
             <input type="text" id="nomeItem" placeholder="Nome (ex: Torno)">
             <input type="color" id="corItem" value="#3498db" title="Cor">
         </div>
         <div class="linha-input">
-            <input type="number" id="larguraItem" placeholder="Larg. cm">
-            <input type="number" id="comprimentoItem" placeholder="Comp. cm">
+            <input type="number" id="larguraItem" placeholder="Largura">
+            <input type="number" id="comprimentoItem" placeholder="Comprimento">
+            <select id="unidadeItem">
+                <option value="m">Metros (m)</option>
+                <option value="cm" selected>Centímetros (cm)</option>
+                <option value="mm">Milímetros (mm)</option>
+            </select>
         </div>
-        <button onclick="adicionarItem()">+ Adicionar Item à Sala</button>
+        <button onclick="adicionarItem()">Adicionar à Sala</button>
         
         <hr style="width: 100%; border: 0.5px solid #eee;">
         
@@ -140,7 +155,48 @@
         let itemSelecionado = null;
         let lastX = 0; 
         let lastY = 0;
-        const ESCALA = 0.5;
+        
+        // Dimensões da sala em metros
+        let salaMetrosL = 10;
+        let salaMetrosC = 8;
+        
+        // Fator de escala dinâmico (calculado com base no tamanho da sala para caber no visor de 500x400px)
+        function obterEscala() {
+            const pxL = 500 / salaMetrosL; // Pixels por metro na largura
+            const pxC = 400 / salaMetrosC; // Pixels por metro no comprimento
+            return Math.min(pxL, pxC);
+        }
+
+        function redimensionarSala() {
+            const l = parseFloat(document.getElementById('larguraSala').value);
+            const c = parseFloat(document.getElementById('comprimentoSala').value);
+            
+            if (!l || !c || l <= 0 || c <= 0) {
+                return alert("Insira valores válidos para a sala!");
+            }
+            
+            salaMetrosL = l;
+            salaMetrosC = c;
+            
+            document.getElementById('infoSala').innerText = `Sala atual: ${l}m x ${c}m`;
+            
+            // Redesenha e reposiciona os itens com base na nova escala
+            atualizarTamanhosVisuais();
+        }
+
+        function atualizarTamanhosVisuais() {
+            const escalaAtual = obterEscala();
+            const itens = document.querySelectorAll('#sala .item');
+            
+            itens.forEach(item => {
+                const wCm = parseFloat(item.getAttribute('data-wcm')) || 59;
+                const hCm = parseFloat(item.getAttribute('data-hcm')) || 36;
+                
+                // Converte cm para metros e multiplica pela nova escala em pixels
+                item.style.width = (wCm / 100 * escalaAtual) + 'px';
+                item.style.height = (hCm / 100 * escalaAtual) + 'px';
+            });
+        }
 
         function selecionar(elemento) {
             if (itemSelecionado) itemSelecionado.classList.remove('selecionado');
@@ -189,10 +245,11 @@
             }
         }
 
-        document.getElementById('sala').addEventListener('mousedown', iniciarArraste);
+        const sala = document.getElementById('sala');
+        sala.addEventListener('mousedown', iniciarArraste);
         document.addEventListener('mousemove', arrastar);
         document.addEventListener('mouseup', pararArraste);
-        document.getElementById('sala').addEventListener('touchstart', iniciarArraste, {passive: false});
+        sala.addEventListener('touchstart', iniciarArraste, {passive: false});
         document.addEventListener('touchmove', arrastar, {passive: false});
         document.addEventListener('touchend', pararArraste);
 
@@ -215,19 +272,20 @@
 
         function duplicarItemSelecionado() {
             if (!itemSelecionado) return alert("Selecione um item primeiro!");
-            const sala = document.getElementById('sala');
             const clone = document.createElement('div');
             clone.className = 'item';
             clone.innerText = itemSelecionado.innerText;
-            clone.style.width = itemSelecionado.style.width;
-            clone.style.height = itemSelecionado.style.height;
+            
+            const wCm = itemSelecionado.getAttribute('data-wcm');
+            const hCm = itemSelecionado.getAttribute('data-hcm');
+            clone.setAttribute('data-wcm', wCm);
+            clone.setAttribute('data-hcm', hCm);
+            
+            const escalaAtual = obterEscala();
+            clone.style.width = (wCm / 100 * escalaAtual) + 'px';
+            clone.style.height = (hCm / 100 * escalaAtual) + 'px';
             clone.style.backgroundColor = itemSelecionado.style.backgroundColor;
             
-            const w = itemSelecionado.getAttribute('data-w');
-            const h = itemSelecionado.getAttribute('data-h');
-            clone.setAttribute('data-w', w);
-            clone.setAttribute('data-h', h);
-
             const angulo = itemSelecionado.getAttribute('data-angle');
             clone.setAttribute('data-angle', angulo);
             clone.style.transform = `rotate(${angulo}deg)`;
@@ -244,22 +302,35 @@
         function adicionarItem() {
             const nome = document.getElementById('nomeItem').value || "Item";
             const cor = document.getElementById('corItem').value;
-            const largura = parseInt(document.getElementById('larguraItem').value);
-            const comprimento = parseInt(document.getElementById('comprimentoItem').value);
+            let valorLargura = parseFloat(document.getElementById('larguraItem').value);
+            let valorComprimento = parseFloat(document.getElementById('comprimentoItem').value);
+            const unidade = document.getElementById('unidadeItem').value;
             
-            if (!largura || !comprimento) return alert("Preencha as medidas!");
+            if (!valorLargura || !valorComprimento) return alert("Preencha as medidas!");
             
-            const sala = document.getElementById('sala');
+            // Converte tudo internamente para centímetros
+            let larguraCm = valorLargura;
+            let comprimentoCm = valorComprimento;
+            
+            if (unidade === 'm') {
+                larguraCm = valorLargura * 100;
+                comprimentoCm = valorComprimento * 100;
+            } else if (unidade === 'mm') {
+                larguraCm = valorLargura / 10;
+                comprimentoCm = valorComprimento / 10;
+            }
+            
+            const escalaAtual = obterEscala();
             const novoElemento = document.createElement('div');
             novoElemento.className = 'item';
             novoElemento.innerText = nome;
             novoElemento.setAttribute('data-angle', '0');
-            novoElemento.setAttribute('data-w', largura);
-            novoElemento.setAttribute('data-h', comprimento);
+            novoElemento.setAttribute('data-wcm', larguraCm);
+            novoElemento.setAttribute('data-hcm', comprimentoCm);
             
-            novoElemento.style.width = (largura * ESCALA) + 'px';
-            novoElemento.style.height = (comprimento * ESCALA) + 'px';
-            novoElemento.style.left = '200px';
+            novoElemento.style.width = (larguraCm / 100 * escalaAtual) + 'px';
+            novoElemento.style.height = (comprimentoCm / 100 * escalaAtual) + 'px';
+            novoElemento.style.left = '150px';
             novoElemento.style.top = '150px';
             novoElemento.style.backgroundColor = cor;
             
@@ -273,13 +344,13 @@
 
         function exportarLayout() {
             const itens = document.querySelectorAll('#sala .item');
-            let arrayDados = [];
+            let arrayDados = [salaMetrosL, salaMetrosC]; // Guarda o tamanho da sala no início
             
             itens.forEach(item => {
                 arrayDados.push([
                     item.innerText,
-                    item.getAttribute('data-w') || "59",
-                    item.getAttribute('data-h') || "36",
+                    item.getAttribute('data-wcm') || "59",
+                    item.getAttribute('data-hcm') || "36",
                     Math.round(parseFloat(item.style.top) || 0),
                     Math.round(parseFloat(item.style.left) || 0),
                     item.style.backgroundColor,
@@ -287,7 +358,6 @@
                 ]);
             });
 
-            // Encolhe ao máximo utilizando compressão de texto pura em Base64
             const textoJson = JSON.stringify(arrayDados);
             const codigoCurtissimo = btoa(encodeURIComponent(textoJson));
             
@@ -300,31 +370,43 @@
             
             try {
                 const textoJson = decodeURIComponent(atob(codigo.trim()));
-                const arrayDados = JSON.parse(textoJson);
+                const dadosLidos = JSON.parse(textoJson);
+                
+                // Os dois primeiros valores correspondem ao tamanho da sala
+                salaMetrosL = dadosLidos[0];
+                salaMetrosC = dadosLidos[1];
+                
+                document.getElementById('larguraSala').value = salaMetrosL;
+                document.getElementById('comprimentoSala').value = salaMetrosC;
+                document.getElementById('infoSala').innerText = `Sala atual: ${salaMetrosL}m x ${salaMetrosC}m`;
                 
                 const sala = document.getElementById('sala');
                 sala.innerHTML = ""; 
                 itemSelecionado = null; 
                 
-                arrayDados.forEach(p => {
+                const escalaAtual = obterEscala();
+                
+                // O resto do array são os itens
+                for (let i = 2; i < dadosLidos.length; i++) {
+                    const p = dadosLidos[i];
                     const novoElemento = document.createElement('div');
                     novoElemento.className = 'item';
                     novoElemento.innerText = p[0];
-                    novoElemento.setAttribute('data-w', p[1]);
-                    novoElemento.setAttribute('data-h', p[2]);
+                    novoElemento.setAttribute('data-wcm', p[1]);
+                    novoElemento.setAttribute('data-hcm', p[2]);
                     novoElemento.style.top = p[3] + 'px';
                     novoElemento.style.left = p[4] + 'px';
                     novoElemento.style.backgroundColor = p[5];
                     novoElemento.setAttribute('data-angle', p[6]);
                     novoElemento.style.transform = `rotate(${p[6]}deg)`;
                     
-                    novoElemento.style.width = (p[1] * ESCALA) + 'px';
-                    novoElemento.style.height = (p[2] * ESCALA) + 'px';
+                    novoElemento.style.width = (p[1] / 100 * escalaAtual) + 'px';
+                    novoElemento.style.height = (p[2] / 100 * escalaAtual) + 'px';
                     
                     sala.appendChild(novoElemento);
-                });
+                }
                 
-                alert("Layout carregado com sucesso!");
+                alert("Layout e tamanho da sala carregados com sucesso!");
             } catch (erro) {
                 alert("Erro ao carregar o código. Certifique-se de copiar o texto inteiro.");
             }
