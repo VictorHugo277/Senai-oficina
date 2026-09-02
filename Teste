@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#111827">
+<title id="pageTitle">Criador de Layout</title>
+<style>
+:root {
+    --bg: #f3f4f6; --panel: #fff; --line: #e5e7eb; --text: #111827;
+    --muted: #6b7280; --primary: #111827; --accent: #2563eb;
+    --accentSoft: #eff6ff; --danger: #dc2626; --dangerSoft: #fef2f2;
+    --shadow: 0 14px 40px rgba(15,23,42,.10);
+}
+* { box-sizing: border-box; }
+html, body {
+    margin: 0; padding: 0; height: 100vh;
+    font-family: Inter, system-ui, sans-serif;
+    background: var(--bg); color: var(--text); overflow: hidden;
+    width: 100vw;
+}
+button, input, select, textarea { font: inherit; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+button { cursor: pointer; border: none; user-select: none; -webkit-user-select: none; }
+
+/* LAYOUT PRINCIPAL */
+.app { height: 100vh; display: grid; grid-template-rows: 64px 1fr; width: 100%; }
+.topbar { background: #fff; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 16px; padding: 0 16px; z-index: 100; min-width: 0; }
+.brand { display: flex; align-items: center; gap: 11px; flex-shrink: 0; }
+.brand-mark { width: 35px; height: 35px; border-radius: 8px; background: var(--primary); color: #fff; display: grid; place-items: center; font-weight: 900; }
+.brand-title { font-size: 15px; font-weight: 900; }
+.brand-sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+/* BARRAS DE FERRAMENTAS - SCROLL HABILITADO E CORRIGIDO */
+.top-actions, .canvas-toolbar, .object-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin; /* Firefox */
+}
+
+/* Barras de rolagem visíveis e elegantes para dar feedback ao usuário */
+.top-actions::-webkit-scrollbar, .canvas-toolbar::-webkit-scrollbar, .object-toolbar::-webkit-scrollbar { 
+    height: 4px;
+}
+.top-actions::-webkit-scrollbar-thumb, .canvas-toolbar::-webkit-scrollbar-thumb, .object-toolbar::-webkit-scrollbar-thumb { 
+    background-color: #cbd5e1;
+    border-radius: 10px;
+}
+
+.top-actions { margin-left: auto; flex: 1; min-width: 0; padding: 4px 0; justify-content: flex-end; }
+.canvas-toolbar { height: 52px; width: 100%; min-width: 0; padding: 0 10px; border-bottom: 1px solid var(--line); z-index: 20; background: #fff; flex-shrink: 0; }
+.object-toolbar { height: 56px; width: 100%; min-width: 0; padding: 0 10px; border-top: 1px solid var(--line); z-index: 20; background: #fff; flex-shrink: 0; }
+
+.toolbar-divider { width: 1px; height: 24px; background: var(--line); margin: 0 2px; flex: 0 0 auto; }
+
+/* BOTÕES BASE */
+.top-btn, .tool-btn { 
+    flex: 0 0 auto; /* Impede que os botões amassem, forçando o scroll */
+    height: 38px; border: 1px solid var(--line); background: #fff; border-radius: 8px; 
+    padding: 0 12px; font-weight: 800; font-size: 12px; color: #374151; 
+    display: flex; align-items: center; justify-content: center; gap: 7px; transition: 0.15s; 
+}
+.top-btn.primary, .tool-btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.top-btn.accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+.top-btn:hover:not(:disabled), .tool-btn:hover:not(:disabled) { filter: brightness(0.95); }
+.tool-btn.selected { background: var(--primary); color: #fff; border-color: var(--primary); }
+.tool-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.danger-text { color: #dc2626; border-color: #fecaca; background: #fef2f2; }
+.danger-text:hover:not(:disabled) { background: #dc2626; color: #fff; }
+
+/* ÁREA DE TRABALHO */
+.workspace { min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 320px; overflow: hidden; position: relative; }
+
+/* INSPETOR COM SCROLL */
+.inspector { 
+    background: #fff; min-height: 0; height: 100%; overflow: hidden; z-index: 50; 
+    border-left: 1px solid var(--line); padding: 16px; display: flex; flex-direction: column; gap: 16px; 
+}
+#inspectorContent {
+    flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding-right: 4px;
+    -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+}
+.canvas-area { width: 100%; min-width: 0; min-height: 0; display: flex; flex-direction: column; background: #eef0f3; position: relative; z-index: 10; }
+
+/* FORMULÁRIOS E INPUTS */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.field { display: flex; flex-direction: column; gap: 5px; } .field.full { grid-column: 1 / -1; }
+.label { font-size: 11px; font-weight: 800; color: #374151; }
+input[type=text], input[type=number], select { width: 100%; height: 40px; border: 1px solid #d1d5db; border-radius: 8px; padding: 0 10px; background: #fff; color: var(--text); outline: none; transition: 0.2s; }
+input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,.15); }
+.color-input { height: 40px; width: 100%; padding: 2px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; cursor: pointer; }
+
+/* BOTÕES PADRÃO GERAIS */
+.primary-btn, .secondary-btn, .danger-btn, .ghost-btn { width: 100%; height: 40px; border-radius: 8px; font-weight: 900; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
+.primary-btn { background: var(--primary); color: #fff; }
+.secondary-btn { background: var(--accentSoft); color: #1d4ed8; border: 1px solid #bfdbfe; }
+.danger-btn { background: var(--danger); color: #fff; border: 1px solid #b91c1c; }
+.danger-btn:hover { background: #b91c1c; }
+.ghost-btn { background: #fff; color: #374151; border: 1px solid var(--line); }
+.notice { font-size: 11px; line-height: 1.5; color: var(--muted); margin-top: 8px; }
+
+/* CANVAS ENGINE (PERFORMANCE) */
+.canvas-scroll { position: relative; flex: 1; min-height: 0; overflow: hidden; touch-action: none; overscroll-behavior: none; }
+.canvas-stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+.room { position: relative; border: 3px solid var(--primary); background-color: #fff; box-shadow: 0 20px 50px rgba(17,24,39,.10); }
+.room.grid-off { background-image: none !important; }
+.room-size-label { position: absolute; left: 50%; top: -30px; transform: translateX(-50%); font-size: 11px; font-weight: 800; color: #374151; background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; box-shadow: 0 5px 14px rgba(17,24,39,.05); white-space: nowrap; z-index: 80; pointer-events: none; }
+.room-size-label.v { left: auto; top: 50%; right: -66px; transform: translateY(-50%) rotate(90deg); }
+.empty-room { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); text-align: center; color: var(--muted); pointer-events: none; width: min(80%,360px); }
+.empty-room strong { display: block; font-size: 16px; color: var(--text); margin-bottom: 6px; }
+
+/* OBJETOS 2D */
+.item { position: absolute; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255,255,255,.9); box-shadow: 0 6px 12px rgba(0,0,0,.15); cursor: grab; touch-action: none; -webkit-user-select: none; user-select: none; will-change: left, top; }
+.item:active { cursor: grabbing; box-shadow: 0 12px 24px rgba(0,0,0,.3); }
+.item.selected { outline: 3px solid var(--accent); outline-offset: 1px; z-index: 50 !important; }
+
+/* PÍLULAS DE NOME (LEITURA LIMPA) */
+.inner-label { 
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    white-space: nowrap; background: rgba(17, 24, 39, 0.85); color: #fff;
+    padding: 3px 6px; border-radius: 4px; font-size: 10px; font-weight: 800;
+    pointer-events: none; backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2); z-index: 2; display: none; 
+}
+.show-names .inner-label { display: block; }
+
+/* ESCALA E LEGENDA */
+.scale-bar { width: 100%; min-width: 0; min-height: 42px; background: #fff; border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: flex-start; padding: 4px 14px; flex-shrink: 0; z-index: 20; gap: 16px; overflow-x: auto; scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
+.scale-bar::-webkit-scrollbar { height: 4px; }
+.scale-bar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+
+.scale-info-group { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.scale-line { width: 90px; height: 8px; position: relative; }
+.scale-line:before { content: ""; position: absolute; left: 0; right: 0; top: 3px; height: 2px; background: var(--text); }
+.scale-line:after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 8px; border-left: 2px solid var(--text); border-right: 2px solid var(--text); }
+.scale-text { font-size: 11px; font-weight: 900; }
+.scale-sub { font-size: 10px; color: var(--muted); }
+
+/* LEGENDA DE CORES DINÂMICA */
+.color-legend { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.legend-item { display: flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 800; color: #374151; background: #f8fafc; border: 1px solid var(--line); padding: 4px 8px; border-radius: 6px; white-space: nowrap; flex-shrink: 0; }
+.legend-box { width: 12px; height: 12px; border-radius: 3px; border: 1px solid rgba(0,0,0,0.15); flex-shrink: 0; }
+.inspect-title { font-size: 14px; font-weight: 900; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text); border-bottom: 2px solid var(--line); padding-bottom: 8px; }
+
+/* MODAIS GERAIS */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,.6); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 9999; backdrop-filter: blur(3px); }
+.modal-backdrop.open { display: flex; }
+.modal { width: min(520px,100%); max-height: 90vh; overflow-y: auto; background: #fff; border-radius: 14px; box-shadow: 0 24px 60px rgba(0,0,0,0.3); padding: 24px; position: relative; }
+.modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.modal-title { font-size: 18px; font-weight: 900; color: var(--text); }
+.modal-close { width: 34px; height: 34px; border: 1px solid var(--line); background: #fff; border-radius: 8px; font-size: 18px; line-height: 1; display: grid; place-items: center; color: var(--muted); }
+.modal-body { display: flex; flex-direction: column; gap: 14px; }
+textarea.code-box { width: 100%; min-height: 100px; border: 1px dashed #cbd5e1; border-radius: 8px; background: #f8fafc; padding: 12px; font: 12px/1.5 ui-monospace, monospace; color: #334155; resize: vertical; outline: none; word-break: break-all; }
+.export-img-preview { max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 10px; }
+
+/* TOASTS E TOOLTIPS */
+.toast { position: fixed; left: 50%; bottom: 20px; transform: translate(-50%,20px); background: #111827; color: #fff; padding: 12px 24px; border-radius: 8px; font-size: 13px; font-weight: 900; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 10000; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+.toast.show { opacity: 1; transform: translate(-50%,0); }
+.custom-tooltip { position: fixed; background: #111827; color: #fff; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; pointer-events: none; z-index: 11000; opacity: 0; transition: opacity 0.2s; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+.custom-tooltip.show { opacity: 1; }
+
+/* TUTORIAL OVERLAY */
+.tutorial-overlay { position: fixed; inset: 0; z-index: 10500; pointer-events: none; display: none; }
+.tutorial-overlay.active { display: block; }
+.tutorial-spotlight { position: absolute; box-shadow: 0 0 0 9999px rgba(15,23,42,0.75); border-radius: 4px; pointer-events: auto; transition: all 0.3s ease; }
+.tutorial-dialog { position: absolute; width: min(320px, 90vw); background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); pointer-events: auto; transition: all 0.3s ease; z-index: 10501; }
+.tutorial-title { font-size: 16px; font-weight: 900; margin-bottom: 8px; }
+.tutorial-text { font-size: 13px; color: var(--text); line-height: 1.5; margin-bottom: 16px; }
+.tutorial-progress { font-size: 11px; font-weight: 800; color: var(--muted); margin-bottom: 12px; }
+.tutorial-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.tutorial-btn { padding: 8px 14px; border-radius: 6px; font-size: 12px; font-weight: 800; border: none; cursor: pointer; }
+.tutorial-btn.skip { background: transparent; color: var(--muted); }
+.tutorial-btn.next { background: var(--accent); color: #fff; }
+
+/* RESPONSIVIDADE MOBILE APRIMORADA */
+@media (max-width: 900px) {
+    body { overflow: hidden; }
+    .app { grid-template-rows: 56px 1fr; }
+    
+    .topbar { padding: 0 10px; gap: 10px; }
+    .brand-sub { display: none; }
+    .brand-title { font-size: 14px; }
+    .brand-mark { width: 30px; height: 30px; font-size: 12px; }
+    
+    .top-actions { justify-content: flex-start; padding: 5px 0; }
+    .top-actions .top-btn { font-size: 11px; padding: 0 10px; height: 32px; }
+    
+    .workspace { grid-template-columns: 1fr; display: flex; flex-direction: column; }
+    .canvas-area { flex: 1; }
+    
+    .inspector { position: fixed; bottom: 0; left: 0; right: 0; max-height: 65vh; border-left: none; border-top: 1px solid var(--line); border-radius: 16px 16px 0 0; box-shadow: 0 -10px 40px rgba(0,0,0,0.15); padding: 20px; display: none; z-index: 200; transition: transform 0.3s ease; }
+    .inspector.open { display: flex; animation: slideUp 0.3s ease-out; }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    
+    .mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 199; }
+    .mobile-overlay.open { display: block; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-mark">CL</div>
+            <div>
+                <div class="brand-title" id="headerProjectName">Criador de Layout</div>
+                <div class="brand-sub">Planejamento de espaços</div>
+            </div>
+        </div>
+        
+        <div class="top-actions">
+            <button class="top-btn primary" id="btnExportPNG" data-tip="Salvar visualização como imagem">Baixar PNG</button>
+            <button class="top-btn accent" id="btnExportCode" data-tip="Gerar código ou link deste layout">Compartilhar</button>
+            <button class="top-btn" id="btnImport" data-tip="Carregar um projeto colando um código">Importar</button>
+            <button class="top-btn" id="btnOpenSetup" data-tip="Alterar as dimensões e nome do projeto">⚙️ Configurar</button>
+            <button class="top-btn" id="btnNew" data-tip="Limpar e começar do zero">Novo</button>
+            <button class="top-btn" id="btnTutorialMenu" data-tip="Rever o tutorial">Ajuda</button>
+        </div>
+    </header>
+
+    <main class="workspace">
+        <section class="canvas-area">
+            
+            <div class="canvas-toolbar">
+                <button class="tool-btn selected" id="btnSelectMode">↖ Selecionar</button>
+                <div class="toolbar-divider"></div>
+                <button class="tool-btn" id="btnZoomIn">＋ Zoom</button>
+                <button class="tool-btn" id="btnZoomOut">− Zoom</button>
+                <button class="tool-btn" id="btnFit" data-tip="Centralizar layout na tela">◱ Ajustar</button>
+                <div class="toolbar-divider"></div>
+                <button class="tool-btn" id="btnGrid" data-tip="Mostra/Oculta linhas de referência">▦ Grade</button>
+                <button class="tool-btn" id="btnSnapMode" data-tip="Força alinhamento magnético com a grade">🧲 Imã: OFF</button>
+                <button class="tool-btn" id="btnToggleNames" data-tip="Mostra/Oculta nomes nos objetos">👁 Nomes: OFF</button>
+            </div>
+            
+            <div class="canvas-scroll" id="canvasScroll">
+                <div class="canvas-stage" id="stage">
+                    <div class="room grid-off" id="room">
+                        <div class="room-size-label" id="roomWidthLabel"></div>
+                        <div class="room-size-label v" id="roomHeightLabel"></div>
+                        <div class="empty-room" id="emptyRoom">
+                            <strong>O layout está vazio</strong>
+                            <span>Clique em "Adicionar Novo" abaixo para inserir objetos.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="scale-bar">
+                <div class="scale-info-group">
+                    <div class="scale-line"></div>
+                    <div>
+                        <div class="scale-text" id="scaleText">1 grid = 50 cm</div>
+                        <div class="scale-sub" id="scaleSub">Total: 10 m × 8 m</div>
+                    </div>
+                </div>
+                <div class="color-legend" id="colorLegend"></div>
+            </div>
+            
+            <div class="object-toolbar">
+                <button class="tool-btn primary" id="btnPanel" data-tip="Adicionar um novo objeto ou editar o atual">＋ Adicionar Novo</button>
+                <div class="toolbar-divider"></div>
+                <button class="tool-btn" id="btnRotate" data-tip="Girar 90°" disabled>↻ Girar</button>
+                <button class="tool-btn" id="btnDuplicate" data-tip="Copiar objeto selecionado" disabled>⧉ Duplicar</button>
+                <button class="tool-btn danger-text" id="btnDelete" data-tip="Apagar este objeto" disabled>⌫ Excluir</button>
+                <div class="toolbar-divider"></div>
+                <button class="tool-btn" id="btnUp" data-tip="Mover para frente" disabled>↑ Subir</button>
+                <button class="tool-btn" id="btnDown" data-tip="Mover para trás" disabled>↓ Descer</button>
+            </div>
+        </section>
+
+        <div class="mobile-overlay" id="mobileOverlay"></div>
+
+        <aside class="inspector" id="inspector">
+            <div id="inspectorContent"></div>
+            <button class="ghost-btn" id="btnCloseInspectorMobile" style="display: none; margin-top: auto;">Fechar Painel</button>
+        </aside>
+    </main>
+</div>
+
+<div class="modal-backdrop" id="modalExport">
+    <div class="modal">
+        <div class="modal-head">
+            <div class="modal-title">Compartilhar Layout</div>
+            <button class="modal-close" onclick="document.getElementById('modalExport').classList.remove('open')">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="notice">Você pode copiar o Link direto (para envio rápido) ou o Código puro (para backups locais).</div>
+            
+            <div class="field" style="margin-top:10px;">
+                <div class="label">Link Direto</div>
+                <div style="display:flex; gap:8px;">
+                    <input type="text" id="exportLinkText" readonly style="flex:1;">
+                    <button class="primary-btn" id="btnCopyLink" style="width: auto; padding: 0 16px;">Copiar Link</button>
+                </div>
+            </div>
+
+            <div class="field" style="margin-top:10px;">
+                <div class="label">Código Compacto do Projeto</div>
+                <textarea id="exportCodeText" class="code-box" readonly></textarea>
+                <button class="secondary-btn" id="btnCopyCode" style="margin-top:8px;">Copiar Código</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-backdrop" id="modalImport">
+    <div class="modal">
+        <div class="modal-head">
+            <div class="modal-title">Carregar Layout</div>
+            <button class="modal-close" onclick="document.getElementById('modalImport').classList.remove('open')">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="notice">Cole abaixo o código de um projeto salvo anteriormente. Isso substituirá o layout atual na tela.</div>
+            <textarea id="importCodeInput" class="code-box" placeholder="Cole o código aqui..."></textarea>
+            <button class="primary-btn" id="btnConfirmImport" style="margin-top:10px;">Carregar Layout</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-backdrop" id="setupModal">
+    <div class="modal">
+        <div class="modal-head">
+            <div class="modal-title">Configurar Espaço</div>
+        </div>
+        <div class="modal-body">
+            <div class="field">
+                <div class="label">Nome do Projeto / Oficina</div>
+                <input type="text" id="setupName" placeholder="Ex: Minha Oficina">
+            </div>
+            <div class="form-grid">
+                <div class="field"><div class="label">Largura da Sala</div><input type="number" id="setupW" min="0.1" step="any" value="10"></div>
+                <div class="field"><div class="label">Comprimento da Sala</div><input type="number" id="setupH" min="0.1" step="any" value="8"></div>
+                <div class="field full"><div class="label">Unidade da Sala</div>
+                    <select id="setupUnit">
+                        <option value="m">Metros (m)</option>
+                        <option value="cm">Centímetros (cm)</option>
+                        <option value="mm">Milímetros (mm)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-grid">
+                <div class="field"><div class="label">Tamanho da Grade (Opcional)</div><input type="number" id="setupGridVal" min="0.01" step="any" placeholder="Auto"></div>
+                <div class="field"><div class="label">Unidade da Grade</div>
+                    <select id="setupGridUnit">
+                        <option value="m">Metros (m)</option>
+                        <option value="cm" selected>Centímetros (cm)</option>
+                        <option value="mm">Milímetros (mm)</option>
+                    </select>
+                </div>
+            </div>
+            <button class="primary-btn" id="btnSaveSetup" style="margin-top:10px">Aplicar Medidas</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-backdrop" id="exportModalMobile">
+    <div class="modal">
+        <div class="modal-head">
+            <div class="modal-title">Imagem Pronta!</div>
+            <button class="modal-close" onclick="document.getElementById('exportModalMobile').classList.remove('open')">×</button>
+        </div>
+        <div class="modal-body" style="text-align: center;">
+            <div class="notice" style="margin-bottom:8px">Toque e segure na imagem abaixo e escolha "Salvar Imagem".</div>
+            <img id="exportImgPreview" class="export-img-preview" src="">
+            <button class="primary-btn" id="btnForceDownloadMobile">Tentar Baixar Diretamente</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="custom-tooltip" id="customTooltip"></div>
+
+<div class="tutorial-overlay" id="tutOverlay">
+    <div class="tutorial-spotlight" id="tutSpotlight"></div>
+    <div class="tutorial-dialog" id="tutDialog">
+        <div class="tutorial-progress" id="tutProgress">1 / 9</div>
+        <div class="tutorial-title" id="tutTitle">Título</div>
+        <div class="tutorial-text" id="tutText">Texto</div>
+        <div class="tutorial-actions">
+            <button class="tutorial-btn skip" id="tutSkip">Pular tudo</button>
+            <button class="tutorial-btn skip" id="tutPrev">Anterior</button>
+            <button class="tutorial-btn next" id="tutNext">Próximo</button>
+        </div>
+    </div>
+</div>
+
+<script>
+'use strict';
+
+/* --- CORE STATE --- */
+const DEFAULT_STATE = { projectName: 'Minha Oficina', room: { width: 10, height: 8, unit: 'm' }, gridVisible: true, showNames: false, gridMeters: 0.5, gridCustom: null, zoom: 1, snap: false, items: [] };
+let draftItem = { name: 'Equipamento', w: 100, h: 60, unit: 'cm', color: '#2563eb' };
+let state = clone(DEFAULT_STATE);
+let selectedId = null, drag = null, panning = null, inspectorOpen = false, currentInspectorMode = null;
+let panX = 0, panY = 0; 
+
+const $ = id => document.getElementById(id);
+const UNIT_FACTOR = { m: 1, cm: 0.01, mm: 0.001 };
+function clone(o) { return JSON.parse(JSON.stringify(o)); }
+function makeId() { return 'i-' + Math.random().toString(36).substr(2, 9); }
+function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+function fmt(n) { return Number(n).toLocaleString('pt-BR', { maximumFractionDigits: 3 }); }
+
+/* --- TOAST & TOOLTIPS --- */
+let toastTimer;
+function toast(msg) { const el = $('toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2500); }
+
+const tooltip = $('customTooltip');
+let tipTimer = null;
+function setupTooltips() {
+    if ('ontouchstart' in window || navigator.maxTouchPoints > 0) return; 
+    document.querySelectorAll('[data-tip]').forEach(el => {
+        const showTip = () => {
+            clearTimeout(tipTimer);
+            tipTimer = setTimeout(() => {
+                if(el.disabled) return;
+                tooltip.textContent = el.getAttribute('data-tip');
+                tooltip.classList.add('show');
+                const rect = el.getBoundingClientRect();
+                let x = rect.left + (rect.width/2) - (tooltip.offsetWidth/2);
+                let y = rect.bottom + 8;
+                if(x < 10) x = 10;
+                if(x + tooltip.offsetWidth > window.innerWidth - 10) x = window.innerWidth - tooltip.offsetWidth - 10;
+                if(y + tooltip.offsetHeight > window.innerHeight - 10) y = rect.top - tooltip.offsetHeight - 8;
+                tooltip.style.left = x + 'px'; tooltip.style.top = y + 'px';
+            }, 300); 
+        };
+        const hideTip = () => { clearTimeout(tipTimer); tooltip.classList.remove('show'); };
+        el.addEventListener('pointerenter', showTip);
+        el.addEventListener('pointerleave', hideTip);
+        el.addEventListener('click', hideTip);
+    });
+}
+
+function bindClick(id, handler) { 
+    const el = $(id); 
+    if (!el) { console.warn(`Elemento não encontrado: #${id}`); return; }
+    el.addEventListener('click', (e) => { try { handler(e); } catch(err) { console.error(`Erro em #${id}:`, err); } }); 
+}
+
+/* --- DATA NORMALIZATION --- */
+function normalizeState(s) {
+    const o = clone(DEFAULT_STATE); if (!s || typeof s !== 'object') return o;
+    o.projectName = String(s.projectName || 'Minha Oficina');
+    o.room.width = Math.max(0.1, Number(s.room?.width) || 10); o.room.height = Math.max(0.1, Number(s.room?.height) || 8);
+    o.room.unit = ['m', 'cm', 'mm'].includes(s.room?.unit) ? s.room.unit : 'm';
+    o.gridVisible = s.gridVisible !== false; o.showNames = !!s.showNames; o.gridCustom = s.gridCustom ? Math.max(0.01, Number(s.gridCustom)) : null;
+    o.gridMeters = clamp(Number(s.gridMeters) || 0.5, 0.01, 5); o.zoom = clamp(Number(s.zoom) || 1, 0.15, 5); o.snap = !!s.snap;
+    o.items = Array.isArray(s.items) ? s.items.map(it => ({
+        id: it.id || makeId(), name: String(it.name || 'Objeto'), width: Math.max(0.01, Number(it.width) || 1), height: Math.max(0.01, Number(it.height) || 1),
+        x: Math.max(0, Number(it.x) || 0), y: Math.max(0, Number(it.y) || 0), angle: (((Number(it.angle) || 0) % 360) + 360) % 360,
+        color: /^#[0-9a-f]{6}$/i.test(it.color || '') ? it.color : '#2563eb', z: Number(it.z) || Date.now()
+    })) : [];
+    return o;
+}
+function saveState() { try { localStorage.setItem('cl-state', JSON.stringify(state)); } catch(e){} }
+function getViewportScale() { const r = $('canvasScroll').getBoundingClientRect(); const uw = Math.max(180, r.width - 70), uh = Math.max(160, r.height - 70); return clamp(Math.min(uw / state.room.width, uh / state.room.height), 25, 200); }
+function keepInside(it) { it.x = clamp(it.x, 0, Math.max(0, state.room.width - it.width)); it.y = clamp(it.y, 0, Math.max(0, state.room.height - it.height)); }
+
+/* --- DOM RENDERING --- */
+function updateToolbars() {
+    const hasSel = !!selectedId;
+    const btnPanel = $('btnPanel');
+    if (btnPanel) { 
+        btnPanel.innerHTML = hasSel ? '☰ Editar Propriedades' : '＋ Adicionar Novo'; 
+        btnPanel.className = hasSel ? 'tool-btn' : 'tool-btn primary'; 
+    }
+    
+    ['btnRotate', 'btnDuplicate', 'btnUp', 'btnDown', 'btnDelete'].forEach(id => { const btn = $(id); if(btn) btn.disabled = !hasSel; });
+    
+    if(window.innerWidth <= 900) {
+        if($('btnCloseInspectorMobile')) $('btnCloseInspectorMobile').style.display = 'block';
+    } else {
+        if($('btnCloseInspectorMobile')) $('btnCloseInspectorMobile').style.display = 'none';
+    }
+}
+
+function updateStageTransform() {
+    const stage = $('stage'); const scroll = $('canvasScroll'); if(!stage || !scroll) return;
+    const r = scroll.getBoundingClientRect();
+    const ppm = getViewportScale(); const w = state.room.width * ppm * state.zoom; const h = state.room.height * ppm * state.zoom;
+    const tx = Math.max(35, (r.width - w) / 2) + panX;
+    const ty = Math.max(40, (r.height - h) / 2) + panY;
+    stage.style.transform = `translate(${tx}px, ${ty}px) scale(${state.zoom})`;
+}
+
+function renderRoom() {
+    const roomEl = $('room'); const ppm = getViewportScale(); const w = state.room.width * ppm, h = state.room.height * ppm;
+    roomEl.style.width = w + 'px'; roomEl.style.height = h + 'px';
+    const c = [0.02, 0.05, 0.1, 0.2, 0.25, 0.5, 1, 2, 5]; const maxDim = Math.max(state.room.width, state.room.height);
+    state.gridMeters = state.gridCustom || c.reduce((best, v) => Math.abs(maxDim / v - 14) < Math.abs(maxDim / best - 14) ? v : best, 0.5);
+    
+    if (state.gridVisible) {
+        roomEl.style.backgroundImage = `linear-gradient(to right,rgba(107,114,128,.16) 1px,transparent 1px),linear-gradient(to bottom,rgba(107,114,128,.16) 1px,transparent 1px)`;
+        roomEl.style.backgroundSize = `${state.gridMeters * ppm}px ${state.gridMeters * ppm}px`;
+        roomEl.classList.remove('grid-off');
+    } else { roomEl.style.backgroundImage = 'none'; roomEl.classList.add('grid-off'); }
+
+    const btnNames = $('btnToggleNames');
+    if(btnNames) {
+        btnNames.textContent = state.showNames ? '👁 Nomes: ON' : '👁 Nomes: OFF';
+        btnNames.classList.toggle('selected', state.showNames);
+    }
+    roomEl.classList.toggle('show-names', state.showNames);
+
+    $('roomWidthLabel').textContent = fmt(state.room.width) + ' m'; $('roomHeightLabel').textContent = fmt(state.room.height) + ' m';
+    $('scaleText').textContent = '1 grid = ' + fmt(state.gridMeters * 100) + ' cm';
+    $('scaleSub').textContent = `Total: ${fmt(state.room.width)}m × ${fmt(state.room.height)}m`;
+    $('headerProjectName').textContent = state.projectName;
+    $('btnSnapMode').textContent = state.snap ? '🧲 Imã: ON' : '🧲 Imã: OFF'; $('btnSnapMode').classList.toggle('selected', state.snap);
+    
+    renderLegend();
+}
+
+function renderLegend() {
+    const legendEl = $('colorLegend');
+    if(!legendEl) return;
+    legendEl.innerHTML = '';
+    
+    const map = {};
+    state.items.forEach(it => {
+        const key = it.color + '-' + it.name;
+        if(!map[key]) map[key] = { color: it.color, name: it.name };
+    });
+    
+    Object.values(map).forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'legend-item';
+        div.innerHTML = `<span class="legend-box" style="background:${item.color}"></span><span>${item.name}</span>`;
+        legendEl.appendChild(div);
+    });
+}
+
+function renderItems() {
+    const roomEl = $('room'); const ppm = getViewportScale();
+    roomEl.querySelectorAll('.item').forEach(e => e.remove());
+    $('emptyRoom').style.display = state.items.length ? 'none' : 'block';
+    
+    state.items.sort((a, b) => (a.z || 1) - (b.z || 1));
+    state.items.forEach(it => {
+        const el = document.createElement('div');
+        el.className = 'item' + (it.id === selectedId ? ' selected' : ''); el.dataset.id = it.id;
+        el.style.left = (it.x * ppm) + 'px'; el.style.top = (it.y * ppm) + 'px'; el.style.width = (it.width * ppm) + 'px'; el.style.height = (it.height * ppm) + 'px';
+        el.style.background = it.color; el.style.transform = `rotate(${it.angle}deg)`; el.style.zIndex = it.z || 1;
+        el.innerHTML = `<span class="inner-label">${it.name}</span>`;
+        
+        el.addEventListener('pointerdown', (ev) => {
+            if (ev.button !== 0 && ev.pointerType === 'mouse') return;
+            ev.preventDefault(); ev.stopPropagation();
+            if(selectedId !== it.id) { selectedId = it.id; renderAll(); }
+            
+            const rect = roomEl.getBoundingClientRect();
+            drag = { id: it.id, pointerId: ev.pointerId, startX: ev.clientX, startY: ev.clientY, originalX: it.x, originalY: it.y, scale: rect.width / state.room.width };
+            try { el.setPointerCapture(ev.pointerId); } catch(err){}
+        });
+        roomEl.appendChild(el);
+    });
+}
+
+/* --- O INSPETOR DE PROPRIEDADES --- */
+function renderInspector() {
+    const box = $('inspectorContent');
+    const it = state.items.find(i => i.id === selectedId);
+    const mode = it ? it.id : 'ADD';
+    
+    if (currentInspectorMode !== mode) {
+        currentInspectorMode = mode;
+        if (!it) {
+            box.innerHTML = `
+                <div class="inspect-title">Novo Objeto</div>
+                <div class="notice" style="margin-top:0; margin-bottom:12px;">Defina as medidas e adicione:</div>
+                <div class="field"><div class="label">Nome</div><input type="text" id="addName" value="${draftItem.name}" autocomplete="off"></div>
+                <div class="form-grid" style="margin-top:9px">
+                    <div class="field"><div class="label">Largura</div><input type="number" id="addW" min="0.01" step="any" value="${draftItem.w}"></div>
+                    <div class="field"><div class="label">Comprimento</div><input type="number" id="addH" min="0.01" step="any" value="${draftItem.h}"></div>
+                    <div class="field full"><div class="label">Unidade</div>
+                        <select id="addUnit"><option value="m" ${draftItem.unit === 'm'?'selected':''}>Metros (m)</option><option value="cm" ${draftItem.unit === 'cm'?'selected':''}>Centímetros (cm)</option><option value="mm" ${draftItem.unit === 'mm'?'selected':''}>Milímetros (mm)</option></select>
+                    </div>
+                    <div class="field full"><div class="label">Cor de Preenchimento</div><input class="color-input" type="color" id="addColor" value="${draftItem.color}"></div>
+                </div>
+                <button class="primary-btn" id="btnAddConfirm" style="margin-top:15px">＋ Inserir no Layout</button>
+            `;
+            $('addName').addEventListener('input', e => draftItem.name = e.target.value);
+            $('addW').addEventListener('input', e => draftItem.w = Number(e.target.value));
+            $('addH').addEventListener('input', e => draftItem.h = Number(e.target.value));
+            $('addUnit').addEventListener('change', e => draftItem.unit = e.target.value);
+            $('addColor').addEventListener('input', e => draftItem.color = e.target.value);
+            bindClick('btnAddConfirm', createEquipment);
+        } else {
+            box.innerHTML = `
+                <div class="inspect-title">Editando: ${it.name}</div>
+                <div class="field"><div class="label">Nome do Objeto</div><input type="text" id="pName" value="${it.name}" autocomplete="off"></div>
+                <div class="form-grid" style="margin-top:9px">
+                    <div class="field"><div class="label">Largura real (m)</div><input type="number" id="pWidth" min="0.01" step="any" value="${it.width}"></div>
+                    <div class="field"><div class="label">Compr. real (m)</div><input type="number" id="pHeight" min="0.01" step="any" value="${it.height}"></div>
+                    <div class="field full"><div class="label">Cor</div><input class="color-input" type="color" id="pColor" value="${it.color}"></div>
+                </div>
+            `;
+            $('pName').addEventListener('input', e => { 
+                it.name = e.target.value || 'Objeto'; saveState();
+                const el = document.querySelector(`.item[data-id="${it.id}"] .inner-label`); if(el) el.textContent = it.name;
+                renderLegend();
+            });
+            $('pWidth').addEventListener('input', e => { 
+                const val = Number(e.target.value); if(val>0) { it.width = val; keepInside(it); saveState();
+                const el = document.querySelector(`.item[data-id="${it.id}"]`); if(el) { el.style.width = (it.width * getViewportScale()) + 'px'; el.style.left = (it.x * getViewportScale()) + 'px'; } }
+            });
+            $('pHeight').addEventListener('input', e => { 
+                const val = Number(e.target.value); if(val>0) { it.height = val; keepInside(it); saveState();
+                const el = document.querySelector(`.item[data-id="${it.id}"]`); if(el) { el.style.height = (it.height * getViewportScale()) + 'px'; el.style.top = (it.y * getViewportScale()) + 'px'; } }
+            });
+            $('pColor').addEventListener('input', e => { 
+                it.color = e.target.value; saveState();
+                const el = document.querySelector(`.item[data-id="${it.id}"]`); if(el) el.style.background = it.color;
+                renderLegend();
+            });
+        }
+    } else if (it) {
+        if (document.activeElement !== $('pName')) $('pName').value = it.name;
+        if (document.activeElement !== $('pWidth')) $('pWidth').value = it.width;
+        if (document.activeElement !== $('pHeight')) $('pHeight').value = it.height;
+        if (document.activeElement !== $('pColor')) $('pColor').value = it.color;
+    }
+}
+
+function renderAll() {
+    renderRoom(); renderItems(); updateToolbars(); updateStageTransform();
+    if (inspectorOpen) renderInspector();
+}
+
+/* --- AÇÕES DIRETAS --- */
+function createEquipment() {
+    const wVal = Number(draftItem.w); const hVal = Number(draftItem.h);
+    if(!Number.isFinite(wVal) || wVal <= 0 || !Number.isFinite(hVal) || hVal <= 0) { toast('Informe medidas válidas.'); return; }
+    const w = wVal * UNIT_FACTOR[draftItem.unit]; const h = hVal * UNIT_FACTOR[draftItem.unit];
+    const item = { id: makeId(), name: draftItem.name.trim() || 'Objeto', width: w, height: h, x: Math.max(0, (state.room.width - w) / 2), y: Math.max(0, (state.room.height - h) / 2), angle: 0, color: draftItem.color || '#2563eb', z: Date.now() };
+    state.items.push(item); selectedId = item.id; saveState(); renderAll(); toast('Objeto inserido.');
+}
+function rotateSelected() { const it = state.items.find(i => i.id === selectedId); if(!it) return; it.angle = (it.angle + 90) % 360; const temp = it.width; it.width = it.height; it.height = temp; keepInside(it); saveState(); renderAll(); toast('Objeto girado.'); }
+function duplicateSelected() { const it = state.items.find(i => i.id === selectedId); if(!it) return; const copy = clone(it); copy.id = makeId(); copy.x = clamp(it.x + 0.25, 0, Math.max(0, state.room.width - copy.width)); copy.y = clamp(it.y + 0.25, 0, Math.max(0, state.room.height - copy.height)); copy.z = Date.now(); state.items.push(copy); selectedId = copy.id; saveState(); renderAll(); toast('Duplicado.'); }
+function moveLayer(dir) { const it = state.items.find(i => i.id === selectedId); if(!it) return; if(dir === 'up') { it.z = Date.now(); } else { it.z = 1; } saveState(); renderItems(); }
+function zoom(v) { state.zoom = clamp(state.zoom + v, 0.15, 5); updateStageTransform(); }
+
+/* --- EXCLUIR --- */
+function deleteSelected() { 
+    if(!selectedId) return; 
+    state.items = state.items.filter(i => i.id !== selectedId); 
+    selectedId = null; 
+    if(inspectorOpen) renderInspector();
+    saveState(); renderAll(); toast('Objeto excluído.'); 
+}
+
+/* --- CONFIGURAÇÃO (SETUP) --- */
+function openSetupModal() {
+    $('setupName').value = state.projectName; $('setupW').value = state.room.unit === 'm' ? state.room.width : state.room.width / UNIT_FACTOR[state.room.unit]; $('setupH').value = state.room.unit === 'm' ? state.room.height : state.room.height / UNIT_FACTOR[state.room.unit]; $('setupUnit').value = state.room.unit;
+    if (state.gridCustom) { $('setupGridUnit').value = 'm'; $('setupGridVal').value = state.gridCustom; } else { $('setupGridVal').value = ''; }
+    $('setupModal').classList.add('open');
+}
+function saveSetupData() {
+    document.activeElement?.blur();
+    const name = $('setupName').value.trim() || 'Minha Oficina'; const w = Number($('setupW').value); const h = Number($('setupH').value); const unit = $('setupUnit').value;
+    if (!Number.isFinite(w) || w <= 0 || !Number.isFinite(h) || h <= 0) { toast('Dimensões da sala são inválidas.'); return; }
+    state.projectName = name; state.room.width = w * UNIT_FACTOR[unit]; state.room.height = h * UNIT_FACTOR[unit]; state.room.unit = unit;
+    const gVal = Number($('setupGridVal').value); const gUnit = $('setupGridUnit').value; state.gridCustom = (Number.isFinite(gVal) && gVal > 0) ? (gVal * UNIT_FACTOR[gUnit]) : null;
+    state.items.forEach(keepInside); $('setupModal').classList.remove('open'); saveState(); renderAll(); toast('Medidas aplicadas.'); 
+}
+
+/* --- EXPORTAR PNG EM ALTA RESOLUÇÃO --- */
+
+    async function exportPNG() {
+    try {
+        toast('Gerando imagem...');
+        const ppm = 100, scale = 1.5, pad = 80; 
+        const w = Math.ceil(state.room.width * ppm);
+        const h = Math.ceil(state.room.height * ppm);
+        
+        const legendMap = {};
+        state.items.forEach(it => {
+            const key = it.color + '-' + it.name;
+            if(!legendMap[key]) legendMap[key] = { color: it.color, name: it.name };
+        });
+        const uniqueLegends = Object.values(legendMap);
+
+        const canvas = document.createElement('canvas'); 
+        canvas.width = (w + pad * 2) * scale; 
+        canvas.height = (h + pad * 2 + (uniqueLegends.length > 0 ? 50 : 0)) * scale;
+        
+        const ctx = canvas.getContext('2d'); 
+        ctx.scale(scale, scale);
+        ctx.fillStyle = '#f3f4f6'; ctx.fillRect(0, 0, canvas.width/scale, canvas.height/scale); 
+        ctx.fillStyle = '#fff'; ctx.fillRect(pad, pad, w, h);
+        
+        if(state.gridVisible) {
+            const grid = state.gridMeters * ppm; 
+            ctx.strokeStyle = 'rgba(107,114,128,.16)'; 
+            ctx.lineWidth = 1;
+            for(let x = 0; x <= w; x += grid) { ctx.beginPath(); ctx.moveTo(pad + x, pad); ctx.lineTo(pad + x, pad + h); ctx.stroke(); }
+            for(let y = 0; y <= h; y += grid) { ctx.beginPath(); ctx.moveTo(pad, pad + y); ctx.lineTo(pad + w, pad + y); ctx.stroke(); }
+        }
+        ctx.strokeStyle = '#111827'; ctx.lineWidth = 6; ctx.strokeRect(pad, pad, w, h);
+        
+        state.items.forEach(it => {
+            ctx.save(); 
+            ctx.translate(pad + (it.x * ppm) + (it.width * ppm) / 2, pad + (it.y * ppm) + (it.height * ppm) / 2); 
+            ctx.rotate((it.angle || 0) * Math.PI / 180);
+            ctx.fillStyle = it.color || '#2563eb'; 
+            ctx.fillRect(-(it.width * ppm) / 2, -(it.height * ppm) / 2, it.width * ppm, it.height * ppm);
+            ctx.strokeStyle = '#fff'; 
+            ctx.lineWidth = 3; 
+            ctx.strokeRect(-(it.width * ppm) / 2, -(it.height * ppm) / 2, it.width * ppm, it.height * ppm);
+            
+            if(state.showNames) {
+                ctx.font = 'bold 12px Arial';
+                const txtWidth = ctx.measureText(it.name).width;
+                ctx.fillStyle = 'rgba(17, 24, 39, 0.85)';
+                ctx.fillRect(-txtWidth/2 - 6, -12, txtWidth + 12, 24);
+                ctx.fillStyle = '#fff'; 
+                ctx.textAlign = 'center'; 
+                ctx.textBaseline = 'middle'; 
+                ctx.fillText(it.name, 0, 0); 
+            }
+            ctx.restore();
+        });
+
+        ctx.fillStyle = '#111827'; 
+        ctx.font = '900 18px Arial'; 
+        ctx.textAlign = 'left'; 
+        ctx.fillText(state.projectName, pad, pad - 42);
+        ctx.font = '14px Arial'; 
+        ctx.fillText(`Espaço: ${fmt(state.room.width)} m × ${fmt(state.room.height)} m`, pad, pad - 22);
+        
+        if (uniqueLegends.length > 0) {
+            let legendX = pad, legendY = pad + h + 35;
+            ctx.font = 'bold 12px Arial'; 
+            ctx.textBaseline = 'middle';
+            uniqueLegends.forEach(item => {
+                ctx.fillStyle = item.color; ctx.fillRect(legendX, legendY - 8, 16, 16);
+                ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.lineWidth = 1; ctx.strokeRect(legendX, legendY - 8, 16, 16);
+                ctx.fillStyle = '#374151'; ctx.textAlign = 'left'; ctx.fillText(item.name, legendX + 22, legendY);
+                legendX += 22 + ctx.measureText(item.name).width + 24;
+            });
+        }
+
+        // Converte o canvas para DataURL (Base64), que possui melhor compatibilidade mobile
+        const dataUrl = canvas.toDataURL('image/png');
+        const filename = (state.projectName || 'projeto').replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.png';
+
+        // Verifica se é um dispositivo móvel ou tela pequena
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 900;
+
+        if (isMobile) {
+            // No celular: exibe o modal com a imagem em tela para que o usuário toque e salve
+            $('exportImgPreview').src = dataUrl;
+            $('exportModalMobile').classList.add('open');
+            $('btnForceDownloadMobile').onclick = () => {
+                const a = document.createElement('a');
+                a.href = dataUrl;
+                a.download = filename;
+                a.click();
+            };
+            toast('Imagem gerada! Pressione sobre a imagem para salvar.');
+        } else {
+            // No PC: executa o download automático
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            toast('Download concluído!');
+        }
+
+    } catch(err) {
+        console.error('Erro na exportação do PNG:', err);
+        toast('Erro ao gerar PNG. Tente novamente.');
+    }
+}
+
+
+/* --- SISTEMA DE COMPARTILHAMENTO (CÓDIGO/LINK) --- */
+function encodeLayout(data) { try { return btoa(Array.from(new TextEncoder().encode(JSON.stringify(data)), b => String.fromCharCode(b)).join('')); } catch(e) { return ''; } }
+function decodeLayout(code) { try { code = code.trim(); if(code.startsWith('http')) code = code.split('#layout=')[1]; if(code.startsWith('{')) return JSON.parse(code); return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(code), c => c.charCodeAt(0)))); } catch(e) { return null; } }
+function importLayoutCode(code) { const d = decodeLayout(code); if(!d){ toast('Código inválido ou corrompido.'); return false; } state = normalizeState(d); selectedId = null; drag = null; panning = null; panX = 0; panY = 0; saveState(); renderAll(); toast('Layout carregado com sucesso!'); return true; }
+function fallbackCopy(text) { const t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; document.body.appendChild(t); t.focus(); t.select(); try { document.execCommand('copy'); toast('Copiado para área de transferência.'); } catch(e) { toast('Falha ao copiar.'); } t.remove(); }
+async function safeCopy(val) { if(val) { try { await navigator.clipboard.writeText(val); toast('Copiado!'); } catch(e) { fallbackCopy(val); } } }
+
+/* --- TUTORIAL --- */
+const tutSteps = [
+    { title: "Bem-vindo ao Criador", text: "Crie layouts de espaços definindo as medidas reais do ambiente e arrastando equipamentos livremente.", target: null },
+    { title: "Medidas da Sala", text: "Primeiro, ajuste o tamanho total do seu espaço e a unidade de medida desejada.", target: "btnOpenSetup" },
+    { title: "Criando Equipamentos", text: "Clique em Adicionar Novo para criar objetos na tela informando nome, dimensões reais e cor.", target: "btnPanel", pre: () => { selectedId=null; renderAll(); } },
+    { title: "Excluindo Objetos", text: "A qualquer momento, basta selecionar um objeto e usar o botão Excluir (ou a tecla Delete no PC) para apagar.", target: "btnDelete" },
+    { title: "Código e Link", text: "Use Exportar para gerar um Link do projeto. Use Importar para recuperar projetos através de Códigos colados.", target: "btnExportCode" },
+    { title: "Imagem Final", text: "Quando tudo estiver pronto, baixe seu trabalho em alta resolução através do botão Baixar PNG.", target: "btnExportPNG" }
+];
+let tutIdx = 0;
+function runTutorialStep() {
+    const s = tutSteps[tutIdx];
+    $('tutProgress').textContent = (tutIdx + 1) + " / " + tutSteps.length;
+    $('tutTitle').textContent = s.title; $('tutText').textContent = s.text;
+    $('tutPrev').style.display = tutIdx === 0 ? 'none' : 'block';
+    $('tutNext').textContent = tutIdx === tutSteps.length - 1 ? 'Começar' : 'Próximo';
+    
+    if(s.pre) s.pre();
+    
+    setTimeout(() => {
+        const spot = $('tutSpotlight');
+        if (s.target && $(s.target)) {
+            const r = $(s.target).getBoundingClientRect();
+            spot.style.left = (r.left - 4) + 'px'; spot.style.top = (r.top - 4) + 'px'; spot.style.width = (r.width + 8) + 'px'; spot.style.height = (r.height + 8) + 'px'; spot.style.opacity = '1';
+        } else { spot.style.opacity = '0'; }
+        
+        const d = $('tutDialog'); d.style.left = '50%'; d.style.top = '50%'; d.style.transform = 'translate(-50%, -50%)'; 
+    }, 100);
+}
+function endTutorial() { 
+    $('tutOverlay').classList.remove('active'); 
+    localStorage.setItem('cl-tut-done', '1'); 
+    if(state.items.length === 0) openSetupModal(); 
+}
+function startTutorial() { tutIdx = 0; $('tutOverlay').classList.add('active'); runTutorialStep(); }
+
+/* --- INICIALIZAÇÃO E EVENTOS --- */
+document.addEventListener('DOMContentLoaded', () => {
+    setupTooltips();
+
+    bindClick('btnOpenSetup', openSetupModal); bindClick('btnSaveSetup', saveSetupData);
+    bindClick('setupModal', (e) => { if (e.target === $('setupModal')) saveSetupData(); });
+    
+    bindClick('btnZoomIn', () => zoom(0.15)); bindClick('btnZoomOut', () => zoom(-0.15));
+    bindClick('btnFit', () => { state.zoom = 1; panX = 0; panY = 0; updateStageTransform(); toast('Visão centralizada.'); });
+    bindClick('btnGrid', () => { state.gridVisible = !state.gridVisible; saveState(); renderRoom(); });
+    bindClick('btnToggleNames', () => { state.showNames = !state.showNames; saveState(); renderRoom(); toast(state.showNames ? 'Nomes visíveis' : 'Nomes ocultos'); });
+    bindClick('btnSnapMode', () => { state.snap = !state.snap; saveState(); renderRoom(); toast(state.snap ? 'Imã ON' : 'Imã OFF'); });
+    
+    function toggleInspector() { 
+        inspectorOpen = !inspectorOpen; 
+        $('inspector').classList.toggle('open', inspectorOpen); 
+        $('mobileOverlay').classList.toggle('open', inspectorOpen);
+        if (inspectorOpen) renderInspector(); 
+    }
+    bindClick('btnPanel', toggleInspector);
+    bindClick('btnCloseInspectorMobile', () => { inspectorOpen = false; $('inspector').classList.remove('open'); $('mobileOverlay').classList.remove('open'); });
+    bindClick('mobileOverlay', () => { inspectorOpen = false; $('inspector').classList.remove('open'); $('mobileOverlay').classList.remove('open'); });
+    
+    bindClick('btnRotate', rotateSelected); bindClick('btnDuplicate', duplicateSelected); 
+    bindClick('btnUp', () => moveLayer('up')); bindClick('btnDown', () => moveLayer('down'));
+    bindClick('btnDelete', deleteSelected);
+
+    bindClick('btnNew', () => { if(confirm('Excluir TODOS os objetos e começar do zero?')) { state = clone(DEFAULT_STATE); selectedId = null; panX = 0; panY = 0; saveState(); renderAll(); openSetupModal(); } });
+    bindClick('btnExportPNG', exportPNG);
+    
+    bindClick('btnImport', () => { $('importCodeInput').value = ''; $('modalImport').classList.add('open'); });
+    bindClick('btnConfirmImport', () => { const code = $('importCodeInput').value; if(code) { if(importLayoutCode(code)) $('modalImport').classList.remove('open'); } });
+    
+    bindClick('btnExportCode', () => { 
+        const linkStr = window.location.origin + window.location.pathname + '#layout=' + encodeURIComponent(encodeLayout(state));
+        $('exportLinkText').value = linkStr;
+        $('exportCodeText').value = encodeLayout(state);
+        $('modalExport').classList.add('open'); 
+    });
+    bindClick('btnCopyLink', () => safeCopy($('exportLinkText').value));
+    bindClick('btnCopyCode', () => safeCopy($('exportCodeText').value));
+
+    bindClick('btnTutorialMenu', startTutorial);
+    bindClick('tutNext', () => { if(tutIdx < tutSteps.length - 1) { tutIdx++; runTutorialStep(); } else endTutorial(); });
+    bindClick('tutPrev', () => { if(tutIdx > 0) { tutIdx--; runTutorialStep(); } });
+    bindClick('tutSkip', endTutorial);
+
+    $('room').addEventListener('pointerdown', (e) => { if(!e.target.closest('.item')) { selectedId = null; renderAll(); } });
+
+    document.addEventListener('keydown', e => { 
+        if (e.key === 'Escape') { 
+            $('modalExport').classList.remove('open'); $('modalImport').classList.remove('open'); $('setupModal').classList.remove('open'); $('exportModalMobile').classList.remove('open');
+            inspectorOpen = false; $('inspector').classList.remove('open'); $('mobileOverlay').classList.remove('open');
+        } 
+        if ((e.key === 'Delete' || e.key === 'Backspace') && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) {
+            deleteSelected();
+        } 
+    });
+
+    // ENGINE DE PERFORMANCE: DRAG & DROP E PAN/ZOOM COM RAF
+    let activePointers = {}; let initPinchDist = null; let initPinchZoom = 1;
+    let isDraggingFrame = false, isPanningFrame = false;
+    const canvasScroll = $('canvasScroll');
+
+    window.addEventListener('pointermove', e => {
+        if (drag && e.pointerId === drag.pointerId) {
+            const it = state.items.find(i => i.id === drag.id); if (!it) return;
+            let nx = drag.originalX + (e.clientX - drag.startX) / drag.scale;
+            let ny = drag.originalY + (e.clientY - drag.startY) / drag.scale;
+            nx = clamp(nx, 0, state.room.width - it.width); ny = clamp(ny, 0, state.room.height - it.height);
+            if (state.snap) { const g = state.gridCustom || state.gridMeters; nx = Math.round(nx / g) * g; ny = Math.round(ny / g) * g; }
+            it.x = nx; it.y = ny;
+            if(!isDraggingFrame) {
+                isDraggingFrame = true;
+                requestAnimationFrame(() => {
+                    const el = document.querySelector(`.item[data-id="${it.id}"]`); 
+                    if (el) { const ppm = getViewportScale(); el.style.left = (it.x * ppm) + 'px'; el.style.top = (it.y * ppm) + 'px'; }
+                    isDraggingFrame = false;
+                });
+            }
+        }
+    });
+
+    window.addEventListener('pointerup', e => { if (drag && e.pointerId === drag.pointerId) { drag = null; saveState(); renderItems(); } });
+    window.addEventListener('pointercancel', e => { if (drag && e.pointerId === drag.pointerId) drag = null; });
+
+    canvasScroll.addEventListener('pointerdown', e => {
+        if (e.target.closest('.item') || e.target.closest('.tool-btn')) return;
+        activePointers[e.pointerId] = e; const keys = Object.keys(activePointers);
+        if (keys.length === 2) {
+            const p1 = activePointers[keys[0]], p2 = activePointers[keys[1]];
+            initPinchDist = Math.hypot(p1.clientX - p2.clientX, p1.clientY - p2.clientY); initPinchZoom = state.zoom; panning = null;
+        } else if (keys.length === 1) {
+            if (e.button !== 0 && e.pointerType === 'mouse') return;
+            panning = { pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, initPanX: panX, initPanY: panY };
+        }
+        try { canvasScroll.setPointerCapture(e.pointerId); } catch(err){}
+    });
+    
+    canvasScroll.addEventListener('pointermove', e => {
+        if (activePointers[e.pointerId]) activePointers[e.pointerId] = e; const keys = Object.keys(activePointers);
+        if (keys.length === 2) {
+            const p1 = activePointers[keys[0]], p2 = activePointers[keys[1]];
+            const dist = Math.hypot(p1.clientX - p2.clientX, p1.clientY - p2.clientY);
+            if (initPinchDist) { 
+                state.zoom = clamp(initPinchZoom * (dist / initPinchDist), 0.15, 5); 
+                if(!isPanningFrame){ isPanningFrame = true; requestAnimationFrame(()=>{ updateStageTransform(); isPanningFrame = false; }); }
+            }
+            return;
+        }
+        if (panning && e.pointerId === panning.pointerId && keys.length < 2) { 
+            panX = panning.initPanX + (e.clientX - panning.startX);
+            panY = panning.initPanY + (e.clientY - panning.startY);
+            if(!isPanningFrame){ isPanningFrame = true; requestAnimationFrame(()=>{ updateStageTransform(); isPanningFrame = false; }); }
+        }
+    });
+
+    function cleanPointer(e) { delete activePointers[e.pointerId]; if (Object.keys(activePointers).length < 2) initPinchDist = null; if (panning && e.pointerId === panning.pointerId) panning = null; }
+    canvasScroll.addEventListener('pointerup', cleanPointer); canvasScroll.addEventListener('pointercancel', cleanPointer);
+    canvasScroll.addEventListener('wheel', e => { if (e.ctrlKey || e.metaKey) { e.preventDefault(); zoom(e.deltaY < 0 ? 0.08 : -0.08); } }, { passive: false });
+    window.addEventListener('resize', () => { clearTimeout(window.resTimer); window.resTimer = setTimeout(renderAll, 100); });
+    
+    // INICIALIZAR APP
+    if (window.location.hash.startsWith('#layout=')) { try { if(importLayoutCode(decodeURIComponent(window.location.hash.substring(8)))) { history.replaceState(null, null, ' '); return; } } catch(e) {} }
+    try { const saved = localStorage.getItem('cl-state'); if (saved) { state = normalizeState(JSON.parse(saved)); } } catch(e) {}
+    renderAll();
+
+    // Iniciar Tutorial se for primeira vez
+    if(!localStorage.getItem('cl-tut-done')) { 
+        setTimeout(startTutorial, 500); 
+    } else {
+        if(state.items.length === 0) openSetupModal();
+    }
+});
+</script>
+</body>
+</html>
