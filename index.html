@@ -14,10 +14,9 @@
 }
 * { box-sizing: border-box; }
 
-/* FIX MOBILE: height 100dvh garante que o fundo não suma atrás da barra do navegador */
 html, body {
     margin: 0; padding: 0; 
-    width: 100%; height: 100%; 
+    width: 100%; height: 100%; height: 100dvh; 
     font-family: Inter, system-ui, sans-serif;
     background: var(--bg); color: var(--text); overflow: hidden;
 }
@@ -25,7 +24,6 @@ html, body {
 button, input, select, textarea { font: inherit; touch-action: manipulation; -webkit-tap-highlight-color: transparent; outline: none; }
 button { cursor: pointer; border: none; user-select: none; -webkit-user-select: none; }
 
-/* LAYOUT PRINCIPAL (PC MELHORADO) */
 .app { 
     width: 100%; height: 100%; height: 100dvh; 
     display: grid; grid-template-rows: 64px 1fr; 
@@ -37,7 +35,6 @@ button { cursor: pointer; border: none; user-select: none; -webkit-user-select: 
 .brand-title { font-size: 15px; font-weight: 900; letter-spacing: -0.02em; }
 .brand-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
-/* BARRAS DE FERRAMENTAS - SCROLL HABILITADO E ELEGANTE NO PC */
 .top-actions, .canvas-toolbar, .object-toolbar {
     display: flex;
     align-items: center;
@@ -50,7 +47,6 @@ button { cursor: pointer; border: none; user-select: none; -webkit-user-select: 
     scrollbar-width: thin;
 }
 
-/* Scrollbars fininhas para o PC (Estilo Software) */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
@@ -58,11 +54,10 @@ button { cursor: pointer; border: none; user-select: none; -webkit-user-select: 
 
 .top-actions { margin-left: auto; flex: 1; min-width: 0; padding: 4px 0; justify-content: flex-end; }
 .canvas-toolbar { height: 54px; width: 100%; min-width: 0; padding: 0 16px; border-bottom: 1px solid var(--line); z-index: 20; background: #fff; flex-shrink: 0; box-shadow: 0 4px 6px -4px rgba(0,0,0,0.05); }
-.object-toolbar { height: 60px; width: 100%; min-width: 0; padding: 0 16px; border-top: 1px solid var(--line); z-index: 20; background: #fff; flex-shrink: 0; box-shadow: 0 -4px 6px -4px rgba(0,0,0,0.05); }
+.object-toolbar { height: 60px; width: 100%; min-width: 0; padding: 0 16px; border-top: 1px solid var(--line); z-index: 40; background: #fff; flex-shrink: 0; box-shadow: 0 -4px 6px -4px rgba(0,0,0,0.05); }
 
 .toolbar-divider { width: 1px; height: 24px; background: var(--line); margin: 0 4px; flex: 0 0 auto; }
 
-/* BOTÕES BASE */
 .top-btn, .tool-btn { 
     flex: 0 0 auto;
     height: 36px; border: 1px solid var(--line); background: #fff; border-radius: 8px; 
@@ -79,10 +74,8 @@ button { cursor: pointer; border: none; user-select: none; -webkit-user-select: 
 .danger-text { color: #dc2626; border-color: transparent; background: transparent; }
 .danger-text:hover:not(:disabled) { background: #fef2f2; border-color: #fecaca; }
 
-/* ÁREA DE TRABALHO */
 .workspace { min-height: 0; height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 340px; overflow: hidden; position: relative; }
 
-/* INSPETOR (PC ESTRUTURADO) */
 .inspector { 
     background: #fff; min-height: 0; height: 100%; overflow: hidden; z-index: 50; 
     border-left: 1px solid var(--line); display: flex; flex-direction: column; 
@@ -94,7 +87,6 @@ button { cursor: pointer; border: none; user-select: none; -webkit-user-select: 
 }
 .canvas-area { width: 100%; min-width: 0; min-height: 0; height: 100%; display: flex; flex-direction: column; background: #eef0f3; position: relative; z-index: 10; }
 
-/* FORMULÁRIOS E INPUTS */
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .field { display: flex; flex-direction: column; gap: 6px; } .field.full { grid-column: 1 / -1; }
 .label { font-size: 12px; font-weight: 700; color: #4b5563; }
@@ -102,7 +94,6 @@ input[type=text], input[type=number], select { width: 100%; height: 42px; border
 input:focus, select:focus, textarea:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(37,99,235,.15); }
 .color-input { height: 42px; width: 100%; padding: 3px; border: 1px solid #d1d5db; border-radius: 8px; background: #f9fafb; cursor: pointer; }
 
-/* BOTÕES PADRÃO GERAIS */
 .primary-btn, .secondary-btn, .danger-btn, .ghost-btn { width: 100%; height: 44px; border-radius: 8px; font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
 .primary-btn { background: var(--primary); color: #fff; }
 .primary-btn:hover { background: #1f2937; }
@@ -113,7 +104,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); backgro
 .notice { font-size: 12px; line-height: 1.5; color: var(--muted); margin-top: 8px; }
 .inspect-title { font-size: 15px; font-weight: 900; margin-bottom: 16px; color: var(--text); border-bottom: 2px solid var(--line); padding-bottom: 12px; }
 
-/* CANVAS ENGINE (PERFORMANCE) */
 .canvas-scroll { position: relative; flex: 1; min-height: 0; overflow: hidden; touch-action: none; overscroll-behavior: none; }
 .canvas-stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
 .room { position: relative; border: 3px solid var(--primary); background-color: #fff; box-shadow: 0 20px 50px rgba(17,24,39,.10); }
@@ -123,12 +113,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); backgro
 .empty-room { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); text-align: center; color: var(--muted); pointer-events: none; width: min(80%,360px); }
 .empty-room strong { display: block; font-size: 16px; color: var(--text); margin-bottom: 6px; }
 
-/* OBJETOS 2D */
 .item { position: absolute; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255,255,255,.9); box-shadow: 0 6px 12px rgba(0,0,0,.15); cursor: grab; touch-action: none; -webkit-user-select: none; user-select: none; will-change: left, top; }
 .item:active { cursor: grabbing; box-shadow: 0 12px 24px rgba(0,0,0,.3); }
 .item.selected { outline: 3px solid var(--accent); outline-offset: 1px; z-index: 50 !important; }
 
-/* PÍLULAS DE NOME */
 .inner-label { 
     position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
     white-space: nowrap; background: rgba(17, 24, 39, 0.85); color: #fff;
@@ -138,7 +126,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); backgro
 }
 .show-names .inner-label { display: block; }
 
-/* ESCALA E LEGENDA */
 .scale-bar { width: 100%; min-width: 0; min-height: 48px; background: #fff; border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: flex-start; padding: 4px 16px; flex-shrink: 0; z-index: 20; gap: 20px; overflow-x: auto; scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
 .scale-info-group { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
 .scale-line { width: 90px; height: 8px; position: relative; }
@@ -147,12 +134,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); backgro
 .scale-text { font-size: 11px; font-weight: 900; }
 .scale-sub { font-size: 10px; color: var(--muted); }
 
-/* LEGENDA DE CORES DINÂMICA */
 .color-legend { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #374151; background: #f8fafc; border: 1px solid var(--line); padding: 4px 10px; border-radius: 6px; white-space: nowrap; flex-shrink: 0; }
 .legend-box { width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgba(0,0,0,0.15); flex-shrink: 0; }
 
-/* MODAIS GERAIS */
 .modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,.6); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 99999; backdrop-filter: blur(3px); }
 .modal-backdrop.open { display: flex; }
 .modal { width: min(520px,100%); max-height: 90vh; overflow-y: auto; background: #fff; border-radius: 16px; box-shadow: 0 24px 60px rgba(0,0,0,0.3); padding: 24px; position: relative; }
@@ -164,13 +149,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); backgro
 textarea.code-box { width: 100%; min-height: 120px; border: 1px dashed #cbd5e1; border-radius: 8px; background: #f8fafc; padding: 16px; font: 13px/1.5 ui-monospace, monospace; color: #334155; resize: vertical; outline: none; word-break: break-all; }
 .export-img-preview { max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 10px; }
 
-/* TOASTS E TOOLTIPS */
-.toast { position: fixed; left: 50%; bottom: 30px; transform: translate(-50%,20px); background: #111827; color: #fff; padding: 14px 28px; border-radius: 8px; font-size: 14px; font-weight: 800; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 100000; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+.toast { position: fixed; left: 50%; bottom: 80px; transform: translate(-50%,20px); background: #111827; color: #fff; padding: 14px 28px; border-radius: 8px; font-size: 14px; font-weight: 800; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 100000; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
 .toast.show { opacity: 1; transform: translate(-50%,0); }
 .custom-tooltip { position: fixed; background: #111827; color: #fff; padding: 8px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; pointer-events: none; z-index: 110000; opacity: 0; transition: opacity 0.2s; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
 .custom-tooltip.show { opacity: 1; }
 
-/* TUTORIAL OVERLAY */
 .tutorial-overlay { position: fixed; inset: 0; z-index: 105000; pointer-events: none; display: none; }
 .tutorial-overlay.active { display: block; }
 .tutorial-spotlight { position: absolute; box-shadow: 0 0 0 9999px rgba(15,23,42,0.75); border-radius: 6px; pointer-events: auto; transition: all 0.3s ease; }
@@ -184,7 +167,7 @@ textarea.code-box { width: 100%; min-height: 120px; border: 1px dashed #cbd5e1; 
 .tutorial-btn.skip:hover { background: #f3f4f6; color: var(--text); }
 .tutorial-btn.next { background: var(--accent); color: #fff; }
 
-/* RESPONSIVIDADE MOBILE */
+/* CORREÇÃO DEFINITIVA MOBILE PARA AS BARRAS INFERIORES */
 @media (max-width: 900px) {
     .app { grid-template-rows: 56px 1fr; }
     .topbar { padding: 0 10px; gap: 10px; }
@@ -197,15 +180,28 @@ textarea.code-box { width: 100%; min-height: 120px; border: 1px dashed #cbd5e1; 
     
     .canvas-toolbar, .object-toolbar { padding: 0 10px; }
     
-    .workspace { grid-template-columns: 1fr; display: flex; flex-direction: column; }
+    .workspace { grid-template-columns: 1fr; display: flex; flex-direction: column; padding-bottom: 60px; }
     .canvas-area { flex: 1; }
     
-    /* Inspector vira painel que desliza no celular */
-    .inspector { position: fixed; bottom: 0; left: 0; right: 0; height: auto; max-height: 70dvh; border-left: none; border-top: 1px solid var(--line); border-radius: 16px 16px 0 0; box-shadow: 0 -10px 40px rgba(0,0,0,0.15); padding: 0; display: none; z-index: 500; transition: transform 0.3s ease; }
+    /* FIX: Barra de ferramentas inferior fixada no rodapé da tela com z-index alto */
+    .object-toolbar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100vw;
+        height: 56px;
+        z-index: 99999;
+        background: #fff;
+        border-top: 1px solid var(--line);
+        box-shadow: 0 -4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .inspector { position: fixed; bottom: 56px; left: 0; right: 0; height: auto; max-height: 65dvh; border-left: none; border-top: 1px solid var(--line); border-radius: 16px 16px 0 0; box-shadow: 0 -10px 40px rgba(0,0,0,0.15); padding: 0; display: none; z-index: 99998; transition: transform 0.3s ease; }
     .inspector.open { display: flex; animation: slideUp 0.3s ease-out; }
     @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     
-    .mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 499; }
+    .mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 99990; }
     .mobile-overlay.open { display: block; }
 }
 </style>
@@ -270,18 +266,18 @@ textarea.code-box { width: 100%; min-height: 120px; border: 1px dashed #cbd5e1; 
                 </div>
                 <div class="color-legend" id="colorLegend"></div>
             </div>
-            
-            <div class="object-toolbar">
-                <button class="tool-btn primary" id="btnPanel" data-tip="Adicionar um novo objeto ou editar o atual">＋ Adicionar Novo</button>
-                <div class="toolbar-divider"></div>
-                <button class="tool-btn" id="btnRotate" data-tip="Girar 90°" disabled>↻ Girar</button>
-                <button class="tool-btn" id="btnDuplicate" data-tip="Copiar objeto selecionado" disabled>⧉ Duplicar</button>
-                <button class="tool-btn danger-text" id="btnDelete" data-tip="Apagar este objeto" disabled>⌫ Excluir</button>
-                <div class="toolbar-divider"></div>
-                <button class="tool-btn" id="btnUp" data-tip="Mover para frente" disabled>↑ Subir</button>
-                <button class="tool-btn" id="btnDown" data-tip="Mover para trás" disabled>↓ Descer</button>
-            </div>
         </section>
+
+        <div class="object-toolbar">
+            <button class="tool-btn primary" id="btnPanel" data-tip="Adicionar um novo objeto ou editar o atual">＋ Adicionar Novo</button>
+            <div class="toolbar-divider"></div>
+            <button class="tool-btn" id="btnRotate" data-tip="Girar 90°" disabled>↻ Girar</button>
+            <button class="tool-btn" id="btnDuplicate" data-tip="Copiar objeto selecionado" disabled>⧉ Duplicar</button>
+            <button class="tool-btn danger-text" id="btnDelete" data-tip="Apagar este objeto" disabled>⌫ Excluir</button>
+            <div class="toolbar-divider"></div>
+            <button class="tool-btn" id="btnUp" data-tip="Mover para frente" disabled>↑ Subir</button>
+            <button class="tool-btn" id="btnDown" data-tip="Mover para trás" disabled>↓ Descer</button>
+        </div>
 
         <div class="mobile-overlay" id="mobileOverlay"></div>
 
@@ -402,7 +398,6 @@ textarea.code-box { width: 100%; min-height: 120px; border: 1px dashed #cbd5e1; 
 <script>
 'use strict';
 
-/* --- CORE STATE --- */
 const DEFAULT_STATE = { projectName: 'Minha Oficina', room: { width: 10, height: 8, unit: 'm' }, gridVisible: true, showNames: false, gridMeters: 0.5, gridCustom: null, zoom: 1, snap: false, items: [] };
 let draftItem = { name: 'Equipamento', w: 100, h: 60, unit: 'cm', color: '#2563eb' };
 let state = clone(DEFAULT_STATE);
@@ -416,7 +411,6 @@ function makeId() { return 'i-' + Math.random().toString(36).substr(2, 9); }
 function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
 function fmt(n) { return Number(n).toLocaleString('pt-BR', { maximumFractionDigits: 3 }); }
 
-/* --- TOAST & TOOLTIPS --- */
 let toastTimer;
 function toast(msg) { const el = $('toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2500); }
 
@@ -449,11 +443,10 @@ function setupTooltips() {
 
 function bindClick(id, handler) { 
     const el = $(id); 
-    if (!el) { console.warn(`Elemento não encontrado: #${id}`); return; }
-    el.addEventListener('click', (e) => { try { handler(e); } catch(err) { console.error(`Erro em #${id}:`, err); } }); 
+    if (!el) return;
+    el.addEventListener('click', (e) => { try { handler(e); } catch(err) { console.error(err); } }); 
 }
 
-/* --- DATA NORMALIZATION --- */
 function normalizeState(s) {
     const o = clone(DEFAULT_STATE); if (!s || typeof s !== 'object') return o;
     o.projectName = String(s.projectName || 'Minha Oficina');
@@ -472,15 +465,13 @@ function saveState() { try { localStorage.setItem('cl-state', JSON.stringify(sta
 function getViewportScale() { const r = $('canvasScroll').getBoundingClientRect(); const uw = Math.max(180, r.width - 70), uh = Math.max(160, r.height - 70); return clamp(Math.min(uw / state.room.width, uh / state.room.height), 25, 200); }
 function keepInside(it) { it.x = clamp(it.x, 0, Math.max(0, state.room.width - it.width)); it.y = clamp(it.y, 0, Math.max(0, state.room.height - it.height)); }
 
-/* --- DOM RENDERING --- */
 function updateToolbars() {
     const hasSel = !!selectedId;
     const btnPanel = $('btnPanel');
     if (btnPanel) { 
-        btnPanel.innerHTML = hasSel ? '☰ Editar Propriedades' : '＋ Adicionar Novo'; 
+        btnPanel.innerHTML = hasSel ? '☰ Editar' : '＋ Adicionar'; 
         btnPanel.className = hasSel ? 'tool-btn' : 'tool-btn primary'; 
     }
-    
     ['btnRotate', 'btnDuplicate', 'btnUp', 'btnDown', 'btnDelete'].forEach(id => { const btn = $(id); if(btn) btn.disabled = !hasSel; });
     
     if(window.innerWidth <= 900) {
@@ -531,13 +522,11 @@ function renderLegend() {
     const legendEl = $('colorLegend');
     if(!legendEl) return;
     legendEl.innerHTML = '';
-    
     const map = {};
     state.items.forEach(it => {
         const key = it.color + '-' + it.name;
         if(!map[key]) map[key] = { color: it.color, name: it.name };
     });
-    
     Object.values(map).forEach(item => {
         const div = document.createElement('div');
         div.className = 'legend-item';
@@ -572,7 +561,6 @@ function renderItems() {
     });
 }
 
-/* --- O INSPETOR DE PROPRIEDADES --- */
 function renderInspector() {
     const box = $('inspectorContent');
     const it = state.items.find(i => i.id === selectedId);
@@ -643,7 +631,6 @@ function renderAll() {
     if (inspectorOpen) renderInspector();
 }
 
-/* --- AÇÕES DIRETAS --- */
 function createEquipment() {
     const wVal = Number(draftItem.w); const hVal = Number(draftItem.h);
     if(!Number.isFinite(wVal) || wVal <= 0 || !Number.isFinite(hVal) || hVal <= 0) { toast('Informe medidas válidas.'); return; }
@@ -656,7 +643,6 @@ function duplicateSelected() { const it = state.items.find(i => i.id === selecte
 function moveLayer(dir) { const it = state.items.find(i => i.id === selectedId); if(!it) return; if(dir === 'up') { it.z = Date.now(); } else { it.z = 1; } saveState(); renderItems(); }
 function zoom(v) { state.zoom = clamp(state.zoom + v, 0.15, 5); updateStageTransform(); }
 
-/* --- EXCLUIR --- */
 function deleteSelected() { 
     if(!selectedId) return; 
     state.items = state.items.filter(i => i.id !== selectedId); 
@@ -665,7 +651,6 @@ function deleteSelected() {
     saveState(); renderAll(); toast('Objeto excluído.'); 
 }
 
-/* --- CONFIGURAÇÃO (SETUP) --- */
 function openSetupModal() {
     $('setupName').value = state.projectName; $('setupW').value = state.room.unit === 'm' ? state.room.width : state.room.width / UNIT_FACTOR[state.room.unit]; $('setupH').value = state.room.unit === 'm' ? state.room.height : state.room.height / UNIT_FACTOR[state.room.unit]; $('setupUnit').value = state.room.unit;
     if (state.gridCustom) { $('setupGridUnit').value = 'm'; $('setupGridVal').value = state.gridCustom; } else { $('setupGridVal').value = ''; }
@@ -680,7 +665,6 @@ function saveSetupData() {
     state.items.forEach(keepInside); $('setupModal').classList.remove('open'); saveState(); renderAll(); toast('Medidas aplicadas.'); 
 }
 
-/* --- EXPORTAR PNG ATUALIZADO (FIX MOBILE DOWNLOAD) --- */
 async function exportPNG() {
     try {
         toast('Gerando imagem...');
@@ -786,14 +770,12 @@ async function exportPNG() {
     }
 }
 
-/* --- SISTEMA DE COMPARTILHAMENTO (CÓDIGO/LINK) --- */
 function encodeLayout(data) { try { return btoa(Array.from(new TextEncoder().encode(JSON.stringify(data)), b => String.fromCharCode(b)).join('')); } catch(e) { return ''; } }
 function decodeLayout(code) { try { code = code.trim(); if(code.startsWith('http')) code = code.split('#layout=')[1]; if(code.startsWith('{')) return JSON.parse(code); return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(code), c => c.charCodeAt(0)))); } catch(e) { return null; } }
 function importLayoutCode(code) { const d = decodeLayout(code); if(!d){ toast('Código inválido ou corrompido.'); return false; } state = normalizeState(d); selectedId = null; drag = null; panning = null; panX = 0; panY = 0; saveState(); renderAll(); toast('Layout carregado com sucesso!'); return true; }
-function fallbackCopy(text) { const t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; document.body.appendChild(t); t.focus(); t.select(); try { document.execCommand('copy'); toast('Copiado para área de transferência.'); } catch(e) { toast('Falha ao copiar.'); } t.remove(); }
+function fallbackCopy(text) { const t = document.createElement('textarea'); t.value = text; t.style.position = 'fixed'; document.body.appendChild(t); t.focus(); t.select(); try { document.execCommand('copy'); toast('Copiado.'); } catch(e) { toast('Falha.'); } t.remove(); }
 async function safeCopy(val) { if(val) { try { await navigator.clipboard.writeText(val); toast('Copiado!'); } catch(e) { fallbackCopy(val); } } }
 
-/* --- TUTORIAL --- */
 const tutSteps = [
     { title: "Bem-vindo ao Criador", text: "Crie layouts de espaços definindo as medidas reais do ambiente e arrastando equipamentos livremente.", target: null },
     { title: "Medidas da Sala", text: "Primeiro, ajuste o tamanho total do seu espaço e a unidade de medida desejada.", target: "btnOpenSetup" },
@@ -829,7 +811,6 @@ function endTutorial() {
 }
 function startTutorial() { tutIdx = 0; $('tutOverlay').classList.add('active'); runTutorialStep(); }
 
-/* --- INICIALIZAÇÃO E EVENTOS --- */
 document.addEventListener('DOMContentLoaded', () => {
     setupTooltips();
 
